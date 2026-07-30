@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Visualizer Studio</title>
+	<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+	<!-- The main rendering area -->
+	<canvas id="mainCanvas"></canvas>
+
+	<!-- The UI Overlay Container -->
+	<div class="ui-container">
+
+		<!-- Header -->
+		<header>
+			<h1>Visualizer Studio</h1>
+		</header>
+
+		<!-- Left Sidebar: Audio Source -->
+		<aside class="panel left-panel">
+			<h2>Audio Source</h2>
+			<div class="control-group">
+				<button class="btn-secondary">Select File <span class="icon">📁</span></button>
+			</div>
+			<div class="control-group toggle-group">
+				<label>🎙️ Live Microphone</label>
+				<input type="checkbox" id="micToggle">
+			</div>
+			<div class="playlist">
+				<div class="track active">Bassline Anthem.mp3 <span class="status">▶</span></div>
+				<div class="track">Ambient Waveform.wav <span class="status">II</span></div>
+				<div class="track">Rutoins Of Faurom.mp3 <span class="status">II</span></div>
+				<div class="track">Synthwave Journey.ogg <span class="status">II</span></div>
+			</div>
+		</aside>
+
+		<!-- Right Sidebar: Settings -->
+		<aside class="panel right-panel">
+			<section>
+				<h2>Multiple Visualization Modes</h2>
+				<div class="modes-grid">
+					<div class="mode-item active">Radial Bars</div>
+					<div class="mode-item">Waveform Curve</div>
+					<div class="mode-item">Spectral Peak</div>
+					<div class="mode-item">Particle Flow</div>
+				</div>
+			</section>
+
+			<section>
+				<h2>Color Themes</h2>
+				<div class="theme-item active" style="background: linear-gradient(90deg, #00f3ff, #ff007f);">Neon
+					Blue/Pink</div>
+				<div class="theme-item" style="background: linear-gradient(90deg, #ffcc00, #ff3300);">Solar Flare</div>
+				<div class="theme-item" style="background: linear-gradient(90deg, #222, #888);">Midnight Chroma</div>
+				<div class="theme-item" style="background: linear-gradient(90deg, #f0f, #0ff, #ff0);">Random Theme</div>
+			</section>
+
+			<button class="btn-party">PARTY MODE <span class="icon">⛶</span></button>
+		</aside>
+
+		<!-- Bottom Playback Bar -->
+		<footer class="playback-bar">
+			<span class="time">02:15 / 04:32</span>
+			<input type="range" class="scrubber" value="50">
+			<div class="player-controls">
+				<button>⏪</button>
+				<button class="btn-play">II</button>
+				<button>⏩</button>
+			</div>
+		</footer>
+	</div>
+
+	<script src="visualizer.js"></script>
+</body>
+
+</html>
