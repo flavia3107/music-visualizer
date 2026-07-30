@@ -88,21 +88,11 @@ function getSimulatedAudioData(bufferLength) {
 function draw() {
 	requestAnimationFrame(draw);
 
-	// Fade clear (creates trails)
-	ctx.fillStyle = 'rgba(6, 6, 12, 0.2)'; // Match background color, slight transparency
-	ctx.fillRect(0, 0, width, height);
-
 	// A. Get Data (Using simulated data for now)
 	const audioData = getSimulatedAudioData(config.barCount);
 	// Simple intensity calculation based on the first few bars (bass)
 	const intensity = audioData[0] / 255;
 
-	// B. Draw Background Particles
-	const particleColor = `hsl(${config.color1.h}, 80%, 70%)`;
-	particles.forEach(p => {
-		p.update(intensity);
-		p.draw(ctx, particleColor);
-	});
 
 	// C. Draw Radial Visualization
 	ctx.save();
