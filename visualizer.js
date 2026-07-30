@@ -87,7 +87,7 @@ function getSimulatedAudioData(bufferLength) {
 // --- 5. The Main Draw Loop ---
 function draw() {
 	requestAnimationFrame(draw);
-
+	ctx.clearRect(0, 0, width, height);
 	// A. Get Data (Using simulated data for now)
 	const audioData = getSimulatedAudioData(config.barCount);
 	// Simple intensity calculation based on the first few bars (bass)

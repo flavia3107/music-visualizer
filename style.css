@@ -1,15 +1,11 @@
 :root {
-	/* Base background colors matching the visual */
-	--bg-center: #1a0826; /* Deep magenta/purple glow */
-	--bg-mid: #0c0714; /* Dark violet transition */
-	--bg-outer: #05040a; /* Obsidian edges */
-
-	--panel-bg: rgba(18, 20, 32, 0.65);
-	--border-color: rgba(255, 255, 255, 0.08);
-	--text-primary: #ffffff;
-	--text-secondary: #9aa0b4;
-	--accent-blue: #00f3ff;
-	--accent-pink: #ff007f;
+	/* Exact color stops matching your image:
+       Top-Left: Electric Blue slate (#0a1226)
+       Mid: Deep Night Violet (#0d0b1a)
+       Bottom-Right: Warm Amber/Purple glow (#1a1018) */
+	--bg-top-left: #2d8db9;
+	--bg-mid: #0d0b1a;
+	--bg-bottom-right: #9b7d2b;
 }
 
 body,
@@ -19,21 +15,23 @@ html {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-	/* Rich radial gradient background */
-	background: radial-gradient(circle at 50% 50%, var(--bg-center) 0%, var(--bg-mid) 50%, var(--bg-outer) 100%);
-	font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
-	color: var(--text-primary);
+
+	/* Top-Left to Bottom-Right Linear Gradient */
+	background: linear-gradient(135deg, var(--bg-top-left) 0%, var(--bg-mid) 50%, var(--bg-bottom-right) 100%);
+	background-attachment: fixed;
+	font-family: "Inter", sans-serif;
 }
 
+/* Ensure canvas is 100% transparent */
 #mainCanvas {
 	position: absolute;
 	top: 0;
 	left: 0;
 	width: 100%;
 	height: 100%;
+	background: transparent; /* Makes canvas pass-through */
 	z-index: 1;
 }
-
 /* 2. The UI Container - Layout grid */
 .ui-container {
 	position: relative;
