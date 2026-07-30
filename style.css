@@ -1,11 +1,8 @@
 :root {
-	/* Exact color stops matching your image:
-       Top-Left: Electric Blue slate (#0a1226)
-       Mid: Deep Night Violet (#0d0b1a)
-       Bottom-Right: Warm Amber/Purple glow (#1a1018) */
 	--bg-top-left: #2d8db9;
 	--bg-mid: #0d0b1a;
 	--bg-bottom-right: #9b7d2b;
+	--panel-bg: #636c8870;
 }
 
 body,
@@ -17,7 +14,6 @@ html {
 	overflow: hidden;
 
 	/* Top-Left to Bottom-Right Linear Gradient */
-	background: linear-gradient(135deg, var(--bg-top-left) 0%, var(--bg-mid) 50%, var(--bg-bottom-right) 100%);
 	background-attachment: fixed;
 	font-family: "Inter", sans-serif;
 }
@@ -31,6 +27,7 @@ html {
 	height: 100%;
 	background: transparent; /* Makes canvas pass-through */
 	z-index: 1;
+	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
 }
 /* 2. The UI Container - Layout grid */
 .ui-container {
@@ -53,10 +50,9 @@ html {
 
 /* 3. Panel Styling (Glassmorphism) */
 .panel,
-header,
 footer {
-	background: var(--panel-bg);
-	backdrop-filter: blur(20px) saturate(180%);
+	/* background: #2e3c45; */
+	backdrop-filter: blur(20px) brightness(1.5);
 	-webkit-backdrop-filter: blur(20px);
 	border: 1px solid var(--border-color);
 	border-radius: 12px;
