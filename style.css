@@ -97,12 +97,8 @@ h2 {
 	justify-content: space-between;
 }
 
-.btn-secondary,
-.track,
-.mode-item,
-.theme-item,
-.btn-party {
-	background: rgba(255, 255, 255, 0.05);
+.element {
+	background: #ffffff21;
 	border: 1px solid var(--border-color);
 	color: var(--text-primary);
 	border-radius: 6px;
@@ -113,7 +109,12 @@ h2 {
 
 .btn-secondary {
 	width: 85%;
-	margin-bottom: 1rem;
+}
+
+.material-symbols-outlined {
+	font-size: 1rem;
+	padding: 9.5px;
+	margin-left: 0.5rem;
 }
 
 .track,
@@ -146,4 +147,24 @@ h2 {
 	font-weight: bold;
 	border: none;
 	margin-top: auto;
+}
+
+.playlist {
+	margin-top: 0.75rem;
+}
+
+.control-group {
+	margin-bottom: 1rem;
+}
+
+.flex-row {
+	display: flex;
+}
+
+.space-between {
+	justify-content: space-between;
+}
+
+.middle {
+	align-items: center;
 }
