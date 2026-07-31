@@ -5,8 +5,17 @@ const ctx = canvas.getContext('2d');
 let width, height, centerX, centerY;
 
 function adjustCanvasSize() {
-	width = canvas.width = window.innerWidth;
-	height = canvas.height = window.innerHeight < 800 ? 800 : window.innerHeight;
+	// Convert rem to pixels based on the root font-size (16px default)
+	const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+
+	const minWidthPx = 30 * rootFontSize;  // 30rem in pixels
+	const minHeightPx = 50 * rootFontSize; // 50rem in pixels
+
+	// Ensure dimensions never drop below window size OR the min-rem thresholds
+	width = canvas.width = Math.max(window.innerWidth, minWidthPx);
+	height = canvas.height = Math.max(window.innerHeight, minHeightPx);
+
+	// Recalculate center coordinates based on the computed canvas dimensions
 	centerX = width / 2;
 	centerY = height / 2;
 }
@@ -39,23 +48,36 @@ function getSimulatedAudioData(bufferLength) {
 function draw() {
 	requestAnimationFrame(draw);
 	ctx.clearRect(0, 0, width, height);
+
 	const audioData = getSimulatedAudioData(config.barCount);
 	const intensity = audioData[0] / 255;
+
+	// 1. DYNAMIC SCALING: Fill ~75-80% of the smaller canvas dimension
+	const minDimension = Math.min(width, height);
+
+	// Set responsive dimensions based on viewport size
+	const dynamicInnerRadius = minDimension * 0.25; // Center circle base size
+	const dynamicMaxBarHeight = minDimension * 0.15; // Max bar stretch
+	const dynamicMinBarHeight = config.minBarHeight || 5;
+
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
+	// 2. Draw Radial Audio Bars
 	for (let i = 0; i < config.barCount; i++) {
 		const angle = (i / config.barCount) * Math.PI * 2;
 		const value = audioData[i];
-		const barHeight = config.minBarHeight + (value / 255) * config.maxBarHeight;
+
+		// Calculate dynamic height based on audio input
+		const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
 
 		// Calculate start and end points using trigonometry
-		const startX = Math.cos(angle) * config.innerRadius;
-		const startY = Math.sin(angle) * config.innerRadius;
-		const endX = Math.cos(angle) * (config.innerRadius + barHeight);
-		const endY = Math.sin(angle) * (config.innerRadius + barHeight);
+		const startX = Math.cos(angle) * dynamicInnerRadius;
+		const startY = Math.sin(angle) * dynamicInnerRadius;
+		const endX = Math.cos(angle) * (dynamicInnerRadius + barHeight);
+		const endY = Math.sin(angle) * (dynamicInnerRadius + barHeight);
 
-		// Define the color gradient for this bar (Cyan -> Pink)
+		// Define linear gradient for each bar
 		const gradient = ctx.createLinearGradient(startX, startY, endX, endY);
 		gradient.addColorStop(0, `hsl(${config.color1.h}, ${config.color1.s}%, ${config.color1.l}%)`);
 		gradient.addColorStop(1, `hsl(${config.color2.h}, ${config.color2.s}%, ${config.color2.l}%)`);
@@ -70,8 +92,8 @@ function draw() {
 		ctx.stroke();
 	}
 
-	// D. Draw Inner Circles (The pink/blue concentric rings)
-	const pulseRadius = config.innerRadius * (0.8 + intensity * 0.2);
+	// 3. Draw Pulsing Inner Concentric Rings
+	const pulseRadius = dynamicInnerRadius * (0.8 + intensity * 0.2);
 
 	// Pink inner ring
 	ctx.strokeStyle = `hsl(${config.color2.h}, 100%, 50%)`;
