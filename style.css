@@ -3,6 +3,7 @@
 	--bg-mid: #0d0b1a;
 	--bg-bottom-right: #9b7d2b;
 	--panel-bg: #636c8870;
+	--font-color: #ebebeb;
 }
 
 body,
@@ -12,27 +13,24 @@ html {
 	width: 100%;
 	height: 100%;
 	overflow: hidden;
-
-	/* Top-Left to Bottom-Right Linear Gradient */
 	background-attachment: fixed;
 	font-family: "Inter", sans-serif;
+	color: var(--font-color);
 }
 
-/* Ensure canvas is 100% transparent */
 #mainCanvas {
 	position: absolute;
 	top: 0;
 	left: 0;
 	width: 100%;
 	height: 100%;
-	background: transparent; /* Makes canvas pass-through */
 	z-index: 1;
 	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
 }
-/* 2. The UI Container - Layout grid */
+
 .ui-container {
 	position: relative;
-	z-index: 2; /* Sits in front of canvas */
+	z-index: 2;
 	width: 100%;
 	height: 100%;
 	display: grid;
@@ -40,43 +38,39 @@ html {
 	grid-template-rows: 80px 1fr 100px;
 	padding: 20px;
 	box-sizing: border-box;
-	pointer-events: none; /* Let clicks pass through empty space to canvas if needed */
+	pointer-events: none;
 }
 
-/* All UI panels allow clicks */
 .ui-container * {
 	pointer-events: auto;
 }
 
-/* 3. Panel Styling (Glassmorphism) */
 .panel,
 footer {
-	/* background: #2e3c45; */
+	background: #ffffff08;
 	backdrop-filter: blur(20px) brightness(1.5);
 	-webkit-backdrop-filter: blur(20px);
 	border: 1px solid var(--border-color);
 	border-radius: 12px;
 	padding: 20px;
-	box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+	box-shadow: inset 0 0px 15px 0px #ffffff26;
 }
 
-/* Individual Grid Placements */
 header {
 	grid-column: 1 / -1;
 	display: flex;
 	align-items: center;
-	padding: 0 30px;
 }
 
 h1 {
 	font-size: 1.5rem;
 	margin: 0;
 }
+
 h2 {
 	font-size: 1rem;
-	color: var(--text-secondary);
-	text-transform: uppercase;
 	margin-top: 0;
+	letter-spacing: 1px;
 }
 
 .left-panel {
@@ -103,7 +97,6 @@ h2 {
 	justify-content: space-between;
 }
 
-/* 4. Small UI Component Styles */
 .btn-secondary,
 .track,
 .mode-item,
@@ -116,6 +109,11 @@ h2 {
 	padding: 10px;
 	cursor: pointer;
 	transition: all 0.2s ease;
+}
+
+.btn-secondary {
+	width: 85%;
+	margin-bottom: 1rem;
 }
 
 .track,
@@ -144,7 +142,7 @@ h2 {
 }
 
 .btn-party {
-	background: #ff4444; /* Alert color */
+	background: #ff4444;
 	font-weight: bold;
 	border: none;
 	margin-top: auto;

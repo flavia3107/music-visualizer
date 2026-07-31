@@ -6,26 +6,24 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Visualizer Studio</title>
 	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet"
+		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 
 <body>
-
-	<!-- The main rendering area -->
 	<canvas id="mainCanvas"></canvas>
-
-	<!-- The UI Overlay Container -->
 	<div class="ui-container">
-
-		<!-- Header -->
 		<header>
 			<h1>Visualizer Studio</h1>
 		</header>
 
-		<!-- Left Sidebar: Audio Source -->
 		<aside class="panel left-panel">
 			<h2>Audio Source</h2>
 			<div class="control-group">
-				<button class="btn-secondary">Select File <span class="icon">📁</span></button>
+				<button class="btn-secondary">
+					Select File
+					<span class="material-symbols-outlined">folder</span>
+				</button>
 			</div>
 			<div class="control-group toggle-group">
 				<label>🎙️ Live Microphone</label>
