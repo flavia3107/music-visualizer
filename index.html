@@ -36,6 +36,15 @@
 
 			<div class="center-spacer">
 				<canvas id="mainCanvas"></canvas>
+				<footer class="playback-bar">
+					<span class="time">02:15 / 04:32</span>
+					<input type="range" class="scrubber" value="50">
+					<div class="player-controls">
+						<button>⏪</button>
+						<button class="btn-play">II</button>
+						<button>⏩</button>
+					</div>
+				</footer>
 			</div>
 
 			<aside class="panel right-panel">
@@ -71,15 +80,7 @@
 		</div>
 
 		<!-- Bottom Playback Bar -->
-		<footer class="playback-bar">
-			<span class="time">02:15 / 04:32</span>
-			<input type="range" class="scrubber" value="50">
-			<div class="player-controls">
-				<button>⏪</button>
-				<button class="btn-play">II</button>
-				<button>⏩</button>
-			</div>
-		</footer>
+
 	</div>
 
 	<script src="visualizer.js"></script>

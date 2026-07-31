@@ -20,15 +20,11 @@ html {
 }
 
 #mainCanvas {
-	position: absolute;
-	top: 0;
-	left: 0;
 	width: 100%;
 	height: 100%;
 	z-index: 1;
 }
 
-/* Converted .ui-container to Flexbox */
 .ui-container {
 	position: relative;
 	z-index: 2;
@@ -46,14 +42,12 @@ html {
 	pointer-events: auto;
 }
 
-/* Wrapper for Left Panel, Center Content, and Right Panel */
 .main-content {
 	display: flex;
 	flex: 1;
-	min-height: 0; /* Prevents overflow issues in nested flex layouts */
+	min-height: 0;
 }
 
-/* Middle space between panels */
 .center-spacer {
 	flex: 1;
 }
@@ -150,7 +144,6 @@ h2 {
 	border-radius: 0 6px 6px 0;
 }
 
-/* Converted .modes-grid to Flexbox */
 .modes-grid {
 	display: flex;
 	flex-wrap: wrap;

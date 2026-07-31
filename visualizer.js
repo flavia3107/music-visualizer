@@ -21,52 +21,11 @@ const config = {
 	color1: { h: 195, s: 100, l: 50 }, // Cyber Cyan (#00f3ff)
 	color2: { h: 330, s: 100, l: 50 }, // Neon Pink (#ff007f)
 	color3: { h: 45, s: 100, l: 50 },  // Solar Gold (#ffcc00)
-
-	particleCount: 150,
 	barCount: 128, // How many bars in the circle
 	innerRadius: 120, // Size of the empty center
 	minBarHeight: 5,
 	maxBarHeight: 100
 };
-
-
-// --- 3. Particle System (For the background dust) ---
-class Particle {
-	constructor() {
-		this.reset();
-	}
-	reset() {
-		this.x = Math.random() * width;
-		this.y = Math.random() * height;
-		this.size = Math.random() * 2 + 0.5;
-		this.speedX = (Math.random() - 0.5) * 0.5;
-		this.speedY = (Math.random() - 0.5) * 0.5;
-		this.life = Math.random() * 0.5 + 0.5; // Opacity
-	}
-	update(audioIntensity) {
-		this.x += this.speedX * (1 + audioIntensity * 2);
-		this.y += this.speedY * (1 + audioIntensity * 2);
-
-		// Wrap around screen
-		if (this.x < 0) this.x = width;
-		if (this.x > width) this.x = 0;
-		if (this.y < 0) this.y = height;
-		if (this.y > height) this.y = 0;
-	}
-	draw(ctx, color) {
-		ctx.globalAlpha = this.life;
-		ctx.fillStyle = color;
-		ctx.beginPath();
-		ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-		ctx.fill();
-		ctx.globalAlpha = 1; // Reset
-	}
-}
-
-const particles = [];
-for (let i = 0; i < config.particleCount; i++) {
-	particles.push(new Particle());
-}
 
 
 // --- 4. Simulated Audio Data (Replace this with real Web Audio API) ---
