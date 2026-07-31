@@ -6,34 +6,28 @@ let width, height, centerX, centerY;
 
 function adjustCanvasSize() {
 	width = canvas.width = window.innerWidth;
-	height = canvas.height = window.innerHeight;
+	height = canvas.height = window.innerHeight < 800 ? 800 : window.innerHeight;
 	centerX = width / 2;
 	centerY = height / 2;
 }
 
 window.addEventListener('resize', adjustCanvasSize);
-adjustCanvasSize(); // Initial call
+adjustCanvasSize();
 
-
-// --- 2. Define the Visualization Parameters (Identical to Image) ---
 const config = {
-	// Colors based on HSL for easy shifting
-	color1: { h: 195, s: 100, l: 50 }, // Cyber Cyan (#00f3ff)
-	color2: { h: 330, s: 100, l: 50 }, // Neon Pink (#ff007f)
-	color3: { h: 45, s: 100, l: 50 },  // Solar Gold (#ffcc00)
-	barCount: 128, // How many bars in the circle
-	innerRadius: 120, // Size of the empty center
+	color1: { h: 195, s: 100, l: 50 },
+	color2: { h: 330, s: 100, l: 50 },
+	color3: { h: 45, s: 100, l: 50 },
+	barCount: 128,
+	innerRadius: 120,
 	minBarHeight: 5,
 	maxBarHeight: 100
 };
 
-
-// --- 4. Simulated Audio Data (Replace this with real Web Audio API) ---
 let simRotation = 0;
 function getSimulatedAudioData(bufferLength) {
 	const data = new Uint8Array(bufferLength);
 	for (let i = 0; i < bufferLength; i++) {
-		// Create a wave pattern that pulses
 		const base = Math.sin(i * 0.1 + simRotation * 2) * 50 + 50;
 		const pulse = Math.sin(simRotation * 5) * 30;
 		data[i] = Math.max(0, base + pulse + (Math.random() * 10));
@@ -42,27 +36,16 @@ function getSimulatedAudioData(bufferLength) {
 	return data;
 }
 
-
-// --- 5. The Main Draw Loop ---
 function draw() {
 	requestAnimationFrame(draw);
 	ctx.clearRect(0, 0, width, height);
-	// A. Get Data (Using simulated data for now)
 	const audioData = getSimulatedAudioData(config.barCount);
-	// Simple intensity calculation based on the first few bars (bass)
 	const intensity = audioData[0] / 255;
-
-
-	// C. Draw Radial Visualization
 	ctx.save();
 	ctx.translate(centerX, centerY);
-	// ctx.rotate(simRotation * 0.2); // Optional: Slow rotation of the whole viz
 
 	for (let i = 0; i < config.barCount; i++) {
-		// Calculate the angle for this bar (0 to 360 degrees)
 		const angle = (i / config.barCount) * Math.PI * 2;
-
-		// Convert audio data to bar height
 		const value = audioData[i];
 		const barHeight = config.minBarHeight + (value / 255) * config.maxBarHeight;
 
@@ -104,8 +87,6 @@ function draw() {
 	ctx.arc(0, 0, pulseRadius * 0.8, 0, Math.PI * 2);
 	ctx.stroke();
 
-	ctx.restore(); // Restore center coordinates
+	ctx.restore();
 }
-
-// Start the loop
 draw();
