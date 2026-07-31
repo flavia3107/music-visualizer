@@ -10,57 +10,65 @@
 		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
 </head>
 
-<body>
-	<canvas id="mainCanvas"></canvas>
+<body class="flex-row">
 	<div class="ui-container">
 		<header>
 			<h1>Visualizer Studio</h1>
 		</header>
 
-		<aside class="left-panel">
-			<div class="panel">
-				<h2>Audio Source</h2>
-				<div class="control-group flex-row space-between middle">
-					<button class="btn-secondary element"> Select File </button>
-					<span class="material-symbols-outlined element">folder</span>
+		<div class="main-content">
+			<aside class="left-panel">
+				<div class="panel">
+					<h2>Audio Source</h2>
+					<div class="control-group flex-row space-between middle">
+						<button class="btn-secondary element"> Select File </button>
+						<span class="material-symbols-outlined element">folder</span>
+					</div>
 				</div>
+
+				<div class="playlist panel">
+					<div class="track element active">Bassline Anthem.mp3 <span class="status">▶</span></div>
+					<div class="track element">Ambient Waveform.wav <span class="status">II</span></div>
+					<div class="track element">Rutoins Of Faurom.mp3 <span class="status">II</span></div>
+					<div class="track element">Synthwave Journey.ogg <span class="status">II</span></div>
+				</div>
+			</aside>
+
+			<div class="center-spacer">
+				<canvas id="mainCanvas"></canvas>
 			</div>
 
-			<div class="playlist panel">
-				<div class="track element active">Bassline Anthem.mp3 <span class="status">▶</span></div>
-				<div class="track element">Ambient Waveform.wav <span class="status">II</span></div>
-				<div class="track element">Rutoins Of Faurom.mp3 <span class="status">II</span></div>
-				<div class="track element">Synthwave Journey.ogg <span class="status">II</span></div>
-			</div>
-		</aside>
+			<aside class="panel right-panel">
+				<section>
+					<h2>Multiple Visualization Modes</h2>
+					<div class="modes-grid">
+						<div class="mode-item element active">Radial Bars</div>
+						<div class="mode-item element">Waveform Curve</div>
+						<div class="mode-item element">Spectral Peak</div>
+						<div class="mode-item element">Particle Flow</div>
+					</div>
+				</section>
 
-		<!-- Right Sidebar: Settings -->
-		<aside class="panel right-panel">
-			<section>
-				<h2>Multiple Visualization Modes</h2>
-				<div class="modes-grid">
-					<div class="mode-item element active">Radial Bars</div>
-					<div class="mode-item element">Waveform Curve</div>
-					<div class="mode-item element">Spectral Peak</div>
-					<div class="mode-item element">Particle Flow</div>
-				</div>
-			</section>
+				<section>
+					<h2>Color Themes</h2>
+					<div class="theme-item element active"
+						style="background: linear-gradient(90deg, #00f3ff, #ff007f);">
+						Neon Blue/Pink
+					</div>
+					<div class="theme-item element" style="background: linear-gradient(90deg, #ffcc00, #ff3300);">
+						Solar Flare
+					</div>
+					<div class="theme-item element" style="background: linear-gradient(90deg, #222, #888);">
+						Midnight Chroma
+					</div>
+					<div class="theme-item element" style="background: linear-gradient(90deg, #f0f, #0ff, #ff0);">
+						Random Theme
+					</div>
+				</section>
 
-			<section>
-				<h2>Color Themes</h2>
-				<div class="theme-item element active" style="background: linear-gradient(90deg, #00f3ff, #ff007f);">
-					Neon
-					Blue/Pink</div>
-				<div class="theme-item element" style="background: linear-gradient(90deg, #ffcc00, #ff3300);">Solar
-					Flare</div>
-				<div class="theme-item element" style="background: linear-gradient(90deg, #222, #888);">Midnight Chroma
-				</div>
-				<div class="theme-item element" style="background: linear-gradient(90deg, #f0f, #0ff, #ff0);">Random
-					Theme</div>
-			</section>
-
-			<button class="btn-party element">PARTY MODE <span class="icon">⛶</span></button>
-		</aside>
+				<button class="btn-party element">PARTY MODE <span class="icon">⛶</span></button>
+			</aside>
+		</div>
 
 		<!-- Bottom Playback Bar -->
 		<footer class="playback-bar">

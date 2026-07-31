@@ -16,6 +16,7 @@ html {
 	background-attachment: fixed;
 	font-family: "Inter", sans-serif;
 	color: var(--font-color);
+	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
 }
 
 #mainCanvas {
@@ -25,24 +26,36 @@ html {
 	width: 100%;
 	height: 100%;
 	z-index: 1;
-	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
 }
 
+/* Converted .ui-container to Flexbox */
 .ui-container {
 	position: relative;
 	z-index: 2;
 	width: 100%;
 	height: 100%;
-	display: grid;
-	grid-template-columns: 320px 1fr 320px;
-	grid-template-rows: 80px 1fr 100px;
+	display: flex;
+	flex-direction: column;
 	padding: 20px;
 	box-sizing: border-box;
 	pointer-events: none;
+	overflow: auto;
 }
 
 .ui-container * {
 	pointer-events: auto;
+}
+
+/* Wrapper for Left Panel, Center Content, and Right Panel */
+.main-content {
+	display: flex;
+	flex: 1;
+	min-height: 0; /* Prevents overflow issues in nested flex layouts */
+}
+
+/* Middle space between panels */
+.center-spacer {
+	flex: 1;
 }
 
 .panel,
@@ -57,9 +70,10 @@ footer {
 }
 
 header {
-	grid-column: 1 / -1;
+	height: 80px;
 	display: flex;
 	align-items: center;
+	flex-shrink: 0;
 }
 
 h1 {
@@ -74,27 +88,27 @@ h2 {
 }
 
 .left-panel {
-	grid-column: 1;
-	grid-row: 2;
+	width: 320px;
 	margin-right: 20px;
+	flex-shrink: 0;
 }
 
 .right-panel {
-	grid-column: 3;
-	grid-row: 2;
+	width: 320px;
 	margin-left: 20px;
 	display: flex;
 	flex-direction: column;
 	justify-content: space-between;
+	flex-shrink: 0;
 }
 
 .playback-bar {
-	grid-column: 1 / -1;
-	grid-row: 3;
+	height: 100px;
 	margin-top: 20px;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
+	flex-shrink: 0;
 }
 
 .element {
@@ -124,16 +138,28 @@ h2 {
 	justify-content: space-between;
 }
 
-.track.active,
 .mode-item.active {
 	border-color: var(--accent-blue);
 	background: rgba(0, 243, 255, 0.1);
 }
 
+.track.active {
+	border-color: var(--accent-blue);
+	background: rgb(146 204 226 / 38%);
+	border-left: 4px solid #b8dafa;
+	border-radius: 0 6px 6px 0;
+}
+
+/* Converted .modes-grid to Flexbox */
 .modes-grid {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
+	display: flex;
+	flex-wrap: wrap;
 	gap: 10px;
+}
+
+.modes-grid .mode-item {
+	flex: 1 1 calc(50% - 5px);
+	box-sizing: border-box;
 }
 
 .theme-item {
