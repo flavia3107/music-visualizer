@@ -5,17 +5,14 @@ const ctx = canvas.getContext('2d');
 let width, height, centerX, centerY;
 
 function adjustCanvasSize() {
-	// Convert rem to pixels based on the root font-size (16px default)
-	const rootFontSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+	// Measure the actual visible size of the canvas container element
+	const rect = canvas.getBoundingClientRect();
 
-	const minWidthPx = 30 * rootFontSize;  // 30rem in pixels
-	const minHeightPx = 50 * rootFontSize; // 50rem in pixels
+	// Use the container's rendered dimensions (or fall back to parent element)
+	width = canvas.width = rect.width || canvas.parentElement.clientWidth;
+	height = canvas.height = rect.height || canvas.parentElement.clientHeight;
 
-	// Ensure dimensions never drop below window size OR the min-rem thresholds
-	width = canvas.width = Math.max(window.innerWidth, minWidthPx);
-	height = canvas.height = Math.max(window.innerHeight, minHeightPx);
-
-	// Recalculate center coordinates based on the computed canvas dimensions
+	// Center coordinates inside the actual visible area
 	centerX = width / 2;
 	centerY = height / 2;
 }
@@ -52,12 +49,15 @@ function draw() {
 	const audioData = getSimulatedAudioData(config.barCount);
 	const intensity = audioData[0] / 255;
 
-	// 1. DYNAMIC SCALING: Fill ~75-80% of the smaller canvas dimension
+	// 1. DYNAMIC SCALING: Base scale on height so it fills the vertical space
 	const minDimension = Math.min(width, height);
 
-	// Set responsive dimensions based on viewport size
-	const dynamicInnerRadius = minDimension * 0.25; // Center circle base size
-	const dynamicMaxBarHeight = minDimension * 0.15; // Max bar stretch
+	// Set max radius to ~46% of height (leaving 4% margin so bars don't clip the edges)
+	const maxTotalRadius = minDimension * 0.46;
+
+	// Scale up inner circle to 65% of max radius
+	const dynamicInnerRadius = maxTotalRadius * 0.65;
+	const dynamicMaxBarHeight = maxTotalRadius * 0.35;
 	const dynamicMinBarHeight = config.minBarHeight || 5;
 
 	ctx.save();
@@ -68,23 +68,19 @@ function draw() {
 		const angle = (i / config.barCount) * Math.PI * 2;
 		const value = audioData[i];
 
-		// Calculate dynamic height based on audio input
 		const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
 
-		// Calculate start and end points using trigonometry
 		const startX = Math.cos(angle) * dynamicInnerRadius;
 		const startY = Math.sin(angle) * dynamicInnerRadius;
 		const endX = Math.cos(angle) * (dynamicInnerRadius + barHeight);
 		const endY = Math.sin(angle) * (dynamicInnerRadius + barHeight);
 
-		// Define linear gradient for each bar
 		const gradient = ctx.createLinearGradient(startX, startY, endX, endY);
 		gradient.addColorStop(0, `hsl(${config.color1.h}, ${config.color1.s}%, ${config.color1.l}%)`);
 		gradient.addColorStop(1, `hsl(${config.color2.h}, ${config.color2.s}%, ${config.color2.l}%)`);
 
-		// Draw the line
 		ctx.strokeStyle = gradient;
-		ctx.lineWidth = 3;
+		ctx.lineWidth = Math.max(3, (dynamicInnerRadius * Math.PI * 2) / config.barCount / 1.3);
 		ctx.lineCap = 'round';
 		ctx.beginPath();
 		ctx.moveTo(startX, startY);
@@ -93,20 +89,20 @@ function draw() {
 	}
 
 	// 3. Draw Pulsing Inner Concentric Rings
-	const pulseRadius = dynamicInnerRadius * (0.8 + intensity * 0.2);
+	const pulseRadius = dynamicInnerRadius * (0.85 + intensity * 0.15);
 
-	// Pink inner ring
+	// Outer pink ring
 	ctx.strokeStyle = `hsl(${config.color2.h}, 100%, 50%)`;
-	ctx.lineWidth = 2;
+	ctx.lineWidth = 3;
 	ctx.beginPath();
-	ctx.arc(0, 0, pulseRadius * 0.9, 0, Math.PI * 2);
+	ctx.arc(0, 0, pulseRadius * 0.92, 0, Math.PI * 2);
 	ctx.stroke();
 
-	// Blue inner ring
+	// Inner blue ring
 	ctx.strokeStyle = `hsl(${config.color1.h}, 100%, 50%)`;
-	ctx.lineWidth = 4;
+	ctx.lineWidth = 5;
 	ctx.beginPath();
-	ctx.arc(0, 0, pulseRadius * 0.8, 0, Math.PI * 2);
+	ctx.arc(0, 0, pulseRadius * 0.82, 0, Math.PI * 2);
 	ctx.stroke();
 
 	ctx.restore();
