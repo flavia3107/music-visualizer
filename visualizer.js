@@ -20,13 +20,13 @@ function adjustCanvasSize() {
 window.addEventListener('resize', adjustCanvasSize);
 adjustCanvasSize();
 
-// Strict 3-Color Palette
-const COLOR_BLUE = 'hsl(195, 100%, 50%)'; // Electric Blue
-const COLOR_PINK = 'hsl(320, 100%, 55%)'; // Hot Pink
-const COLOR_YELLOW = 'hsl(50, 100%, 50%)';  // Bright Yellow
+// 3 Core Hues: Blue (~195°), Pink (~320°), Yellow (~50°)
+const HUE_BLUE = 195;
+const HUE_PINK = 320;
+const HUE_YELLOW = 50;
 
 const config = {
-	barCount: 160,
+	barCount: 140,
 	minBarHeight: 4
 };
 
@@ -42,37 +42,60 @@ function getSimulatedAudioData(bufferLength) {
 	return data;
 }
 
-// 8 Rings defined by precise relative radii spacing matching your design image
-// 1 & 2 close -> 3 spaced out -> 4 spaced -> 5 & 6 very close -> 7 close to outer line
+// 7 Ring Spacing multipliers (2 close, space, 2 close, 1 near edge)
 const RING_SPACING_FACTORS = [0.20, 0.26, 0.46, 0.60, 0.75, 0.80, 0.93];
 
-function createTriColorGradient(radius) {
-	// Linear gradient spanning Left (-R) to Right (+R)
-	// Left = Electric Blue | Center = Hot Pink | Right = Yellow
-	const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
-	grad.addColorStop(0.0, COLOR_BLUE);
-	grad.addColorStop(0.48, COLOR_PINK);
-	grad.addColorStop(1.0, COLOR_YELLOW);
+// Dynamic Ring Gradients with varied angles and color stop variations
+function createDynamicRingGradient(index, totalRings, radius) {
+	// Offset angle per ring so gradient lines don't stack uniformly
+	const angleOffset = (index / totalRings) * (Math.PI / 2) - Math.PI / 4;
+
+	const x0 = Math.cos(angleOffset) * -radius;
+	const y0 = Math.sin(angleOffset) * -radius;
+	const x1 = Math.cos(angleOffset) * radius;
+	const y1 = Math.sin(angleOffset) * radius;
+
+	const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+
+	// Vary color combinations depending on the ring depth
+	if (index % 3 === 0) {
+		// Inner/Alternate Rings: Blue -> Pink -> Yellow
+		grad.addColorStop(0.0, `hsl(${HUE_BLUE}, 100%, 50%)`);
+		grad.addColorStop(0.5, `hsl(${HUE_PINK}, 100%, 55%)`);
+		grad.addColorStop(1.0, `hsl(${HUE_YELLOW}, 100%, 50%)`);
+	} else if (index % 3 === 1) {
+		// Shifted focus: Pink -> Blue -> Yellow
+		grad.addColorStop(0.0, `hsl(${HUE_PINK}, 100%, 55%)`);
+		grad.addColorStop(0.4, `hsl(${HUE_BLUE}, 100%, 50%)`);
+		grad.addColorStop(1.0, `hsl(${HUE_YELLOW}, 100%, 50%)`);
+	} else {
+		// Outer focused: Blue -> Yellow -> Pink
+		grad.addColorStop(0.0, `hsl(${HUE_BLUE}, 100%, 50%)`);
+		grad.addColorStop(0.6, `hsl(${HUE_YELLOW}, 100%, 50%)`);
+		grad.addColorStop(1.0, `hsl(${HUE_PINK}, 100%, 55%)`);
+	}
 	return grad;
 }
 
-// Solid 3-color map for individual bars based on position around circle
+// Smoothly blend solid bar colors across the perimeter (Blue -> Pink -> Yellow sweep)
 function getBarSolidColor(progress) {
-	// Angle in degrees (0 = Right / Yellow side, 180 = Left / Blue side)
-	const angleDeg = progress * 360;
+	let hue;
+	// Map progress (0 to 1) smoothly across Blue (195) -> Pink (320) -> Yellow (410deg / 50deg)
+	if (progress < 0.35) {
+		// Sweep Blue to Pink
+		const t = progress / 0.35;
+		hue = HUE_BLUE + (HUE_PINK - HUE_BLUE) * t;
+	} else if (progress < 0.70) {
+		// Sweep Pink to Yellow
+		const t = (progress - 0.35) / 0.35;
+		hue = HUE_PINK + (410 - HUE_PINK) * t; // 410 = 360 + 50 (Yellow)
+	} else {
+		// Sweep Yellow back to Blue
+		const t = (progress - 0.70) / 0.30;
+		hue = 410 + (555 - 410) * t; // 555 = 360 + 195 (Blue)
+	}
 
-	// Right side (315° to 45°) -> Yellow
-	if (angleDeg >= 315 || angleDeg < 45) {
-		return COLOR_YELLOW;
-	}
-	// Left side (135° to 225°) -> Electric Blue
-	else if (angleDeg >= 135 && angleDeg < 225) {
-		return COLOR_BLUE;
-	}
-	// Top & Bottom regions (Blends) -> Hot Pink
-	else {
-		return COLOR_PINK;
-	}
+	return `hsl(${hue % 360}, 100%, 50%)`;
 }
 
 function draw() {
@@ -84,9 +107,9 @@ function draw() {
 	const audioData = getSimulatedAudioData(config.barCount);
 	const intensity = audioData[0] / 255;
 
-	// 1. DYNAMIC SCALING: Fill ~92% of the container
+	// 1. Fill ~92% of the container
 	const minDimension = Math.min(rect.width, rect.height);
-	const maxOuterRadius = minDimension * 0.46; // Radius = 46% (Diameter = 92%)
+	const maxOuterRadius = minDimension * 0.46;
 
 	const dynamicInnerRadius = maxOuterRadius * 0.72;
 	const dynamicMaxBarHeight = maxOuterRadius * 0.28;
@@ -95,13 +118,12 @@ function draw() {
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
-	// 2. Draw Concentric Inner Circles with Custom Spacing
+	// 2. Draw Inner Circles with Custom Spacing & Dynamic Angled Gradients
 	RING_SPACING_FACTORS.forEach((factor, index) => {
 		const baseRadius = dynamicInnerRadius * factor;
 		const currentRadius = baseRadius * (0.97 + intensity * 0.05);
 
-		ctx.strokeStyle = createTriColorGradient(currentRadius);
-		// Vary line weights like the reference image
+		ctx.strokeStyle = createDynamicRingGradient(index, RING_SPACING_FACTORS.length, currentRadius);
 		ctx.lineWidth = (index === 0 || index === 2 || index === 4) ? 3 : 1.5;
 
 		ctx.beginPath();
@@ -109,7 +131,7 @@ function draw() {
 		ctx.stroke();
 	});
 
-	// 3. Draw Outer Radial Audio Bars with Single 3-Color Sections
+	// 3. Draw Outer Bars with Smooth Color Transitions
 	for (let i = 0; i < config.barCount; i++) {
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
