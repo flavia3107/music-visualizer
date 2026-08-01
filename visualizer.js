@@ -20,7 +20,7 @@ function adjustCanvasSize() {
 window.addEventListener('resize', adjustCanvasSize);
 adjustCanvasSize();
 
-// Base Color Palettes
+// Base Color Palettes (with neon-optimized HSL values)
 const COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';    // Electric Blue
 const COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';   // Dull Electric Blue
 const COLOR_PINK = 'hsla(320, 100%, 55%, 1)';    // Hot Pink
@@ -45,78 +45,60 @@ function getSimulatedAudioData(bufferLength) {
 	return data;
 }
 
-// 8 Ring Spacing multipliers (Inner to Outer)
 const RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 
-// Map exact specified color themes to each ring index (1 to 8)
 function getRingGradient(ringNumber, radius) {
 	const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
 
 	switch (ringNumber) {
-		// 1 - half electric blue half pink
 		case 1:
 			grad.addColorStop(0.00, COLOR_BLUE);
 			grad.addColorStop(0.50, COLOR_BLUE);
 			grad.addColorStop(0.5001, COLOR_PINK);
 			grad.addColorStop(1.00, COLOR_PINK);
 			break;
-
-		// 2 - half dull electric blue - half dull pink
 		case 2:
 			grad.addColorStop(0.00, COLOR_DULL_BLUE);
 			grad.addColorStop(0.50, COLOR_DULL_BLUE);
 			grad.addColorStop(0.5001, COLOR_DULL_PINK);
 			grad.addColorStop(1.00, COLOR_DULL_PINK);
 			break;
-
-		// 3 - half pink half yellow
 		case 3:
 			grad.addColorStop(0.00, COLOR_PINK);
 			grad.addColorStop(0.50, COLOR_PINK);
 			grad.addColorStop(0.5001, COLOR_YELLOW);
 			grad.addColorStop(1.00, COLOR_YELLOW);
 			break;
-
-		// 4 - half dull pink half dull blue
 		case 4:
 			grad.addColorStop(0.00, COLOR_DULL_PINK);
 			grad.addColorStop(0.50, COLOR_DULL_PINK);
 			grad.addColorStop(0.5001, COLOR_DULL_BLUE);
 			grad.addColorStop(1.00, COLOR_DULL_BLUE);
 			break;
-
-		// 5 - half hot pink half electric blue
 		case 5:
 			grad.addColorStop(0.00, COLOR_PINK);
 			grad.addColorStop(0.50, COLOR_PINK);
 			grad.addColorStop(0.5001, COLOR_BLUE);
 			grad.addColorStop(1.00, COLOR_BLUE);
 			break;
-
-		// 6 - half dull blue half transparent
 		case 6:
 			grad.addColorStop(0.00, COLOR_DULL_BLUE);
 			grad.addColorStop(0.50, COLOR_DULL_BLUE);
 			grad.addColorStop(0.5001, COLOR_TRANSPARENT);
 			grad.addColorStop(1.00, COLOR_TRANSPARENT);
 			break;
-
-		// 7 - half electric blue half dull pink
 		case 7:
 			grad.addColorStop(0.00, COLOR_BLUE);
 			grad.addColorStop(0.50, COLOR_BLUE);
 			grad.addColorStop(0.5001, COLOR_DULL_PINK);
 			grad.addColorStop(1.00, COLOR_DULL_PINK);
 			break;
-
-		// 8 - half electric blue, half bright yellow (single unified yellow section)
 		case 8:
 			grad.addColorStop(0.00, COLOR_BLUE);
 			grad.addColorStop(0.50, COLOR_BLUE);
 			grad.addColorStop(0.5001, COLOR_YELLOW);
 			grad.addColorStop(1.00, COLOR_YELLOW);
 			break;
-
 		default:
 			grad.addColorStop(0, COLOR_BLUE);
 			grad.addColorStop(1, COLOR_PINK);
@@ -124,7 +106,7 @@ function getRingGradient(ringNumber, radius) {
 
 	return grad;
 }
-// Outer Bars: Clean sharp sectores matching overall theme
+
 function getPureBarColor(progress) {
 	if (progress < 0.33) {
 		return COLOR_BLUE;
@@ -144,7 +126,6 @@ function draw() {
 	const audioData = getSimulatedAudioData(config.barCount);
 	const intensity = audioData[0] / 255;
 
-	// Scale ~92% of container
 	const minDimension = Math.min(rect.width, rect.height);
 	const maxOuterRadius = minDimension * 0.46;
 
@@ -155,21 +136,31 @@ function draw() {
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
-	// 1. Draw 8 Concentric Circles with exact requested color rules
+	// --- NEON GLOW CONFIGURATION ---
+	// Sets the glow color to white/cyan tint and controls blur radius
+	ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+	ctx.shadowBlur = 15;
+	ctx.shadowOffsetX = 0;
+	ctx.shadowOffsetY = 0;
+
+	// 1. Draw 8 Concentric Circles with Neon Glow
 	RING_SPACING_FACTORS.forEach((factor, index) => {
-		const ringNumber = index + 1; // 1 through 8
+		const ringNumber = index + 1;
 		const baseRadius = dynamicInnerRadius * factor;
 		const currentRadius = baseRadius * (0.97 + intensity * 0.05);
 
 		ctx.strokeStyle = getRingGradient(ringNumber, currentRadius);
-		ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5; // Alternating stroke width
+		ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5;
+
+		// Dynamic shadow blur reacting slightly to audio pulse
+		ctx.shadowBlur = 10 + (intensity * 12);
 
 		ctx.beginPath();
 		ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 		ctx.stroke();
 	});
 
-	// 2. Draw Outer Bars
+	// 2. Draw Outer Bars with Sector-Matched Neon Glow
 	for (let i = 0; i < config.barCount; i++) {
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
@@ -182,7 +173,13 @@ function draw() {
 		const endX = Math.cos(angle) * (dynamicInnerRadius + barHeight);
 		const endY = Math.sin(angle) * (dynamicInnerRadius + barHeight);
 
-		ctx.strokeStyle = getPureBarColor(progress);
+		const color = getPureBarColor(progress);
+		ctx.strokeStyle = color;
+
+		// Match glow color directly to the bar color for stronger neon pop
+		ctx.shadowColor = color;
+		ctx.shadowBlur = 8 + ((value / 255) * 10);
+
 		ctx.lineWidth = Math.max(2.5, (dynamicInnerRadius * Math.PI * 2) / config.barCount / 1.4);
 		ctx.lineCap = 'round';
 		ctx.beginPath();
