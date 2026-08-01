@@ -102,6 +102,7 @@ h2 {
 .playback-bar {
 	height: 4rem;
 	margin-top: 20px;
+	margin-bottom: -1.25rem;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
@@ -111,7 +112,14 @@ h2 {
 }
 
 input[type="range"] {
-	width: 72%;
+	width: 80%;
+	margin: auto 0.5rem;
+	accent-color: #e1e1e1;
+}
+
+input[type="range"]::-webkit-slider-runnable-track,
+input[type="range"]::-moz-range-track {
+	border: none;
 }
 
 .progress {
@@ -141,10 +149,14 @@ input[type="range"] {
 	width: 85%;
 }
 
-.material-symbols-outlined {
+.material-symbols-outlined.element {
 	font-size: 1rem;
 	padding: 9.5px;
 	margin-left: 0.5rem;
+}
+
+.player-controls {
+	margin-top: 0.5rem;
 }
 
 .track,
