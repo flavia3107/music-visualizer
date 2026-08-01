@@ -20,78 +20,59 @@ function adjustCanvasSize() {
 window.addEventListener('resize', adjustCanvasSize);
 adjustCanvasSize();
 
+// Strict 3-Color Palette
+const COLOR_BLUE = 'hsl(195, 100%, 50%)'; // Electric Blue
+const COLOR_PINK = 'hsl(320, 100%, 55%)'; // Hot Pink
+const COLOR_YELLOW = 'hsl(50, 100%, 50%)';  // Bright Yellow
+
 const config = {
-	color1: { h: 195, s: 100, l: 50 }, // Electric Blue
-	color2: { h: 330, s: 100, l: 50 }, // Pink
-	color3: { h: 45, s: 100, l: 50 },  // Yellow
-	barCount: 128,
-	minBarHeight: 5
+	barCount: 160,
+	minBarHeight: 4
 };
 
 let simRotation = 0;
 function getSimulatedAudioData(bufferLength) {
 	const data = new Uint8Array(bufferLength);
 	for (let i = 0; i < bufferLength; i++) {
-		const base = Math.sin(i * 0.1 + simRotation * 2) * 50 + 50;
-		const pulse = Math.sin(simRotation * 5) * 30;
-		data[i] = Math.max(0, base + pulse + (Math.random() * 10));
+		const base = Math.sin(i * 0.08 + simRotation * 2) * 50 + 50;
+		const pulse = Math.sin(simRotation * 4) * 35;
+		data[i] = Math.max(0, base + pulse + (Math.random() * 15));
 	}
 	simRotation += 0.01;
 	return data;
 }
 
-// Helper to create circle stroke styles with custom color schemes
-function getRingStrokeStyle(index, totalRings, radius) {
-	switch (index) {
-		// Full Blue
-		case 0:
-		case 1:
-			return `hsl(${config.color1.h}, 100%, 50%)`;
+// 8 Rings defined by precise relative radii spacing matching your design image
+// 1 & 2 close -> 3 spaced out -> 4 spaced -> 5 & 6 very close -> 7 close to outer line
+const RING_SPACING_FACTORS = [0.20, 0.26, 0.46, 0.60, 0.75, 0.80, 0.93];
 
-		// Half Electric Blue & Half Pink
-		case 2:
-		case 3: {
-			const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
-			grad.addColorStop(0, `hsl(${config.color1.h}, 100%, 50%)`); // Blue
-			grad.addColorStop(1, `hsl(${config.color2.h}, 100%, 50%)`); // Pink
-			return grad;
-		}
-
-		// Full Pink
-		case 4:
-		case 5:
-			return `hsl(${config.color2.h}, 100%, 50%)`;
-
-		// Half Pink & Half Yellow
-		case 6:
-		case 7: {
-			const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
-			grad.addColorStop(0, `hsl(${config.color2.h}, 100%, 50%)`); // Pink
-			grad.addColorStop(1, `hsl(${config.color3.h}, 100%, 50%)`); // Yellow
-			return grad;
-		}
-
-		default:
-			return `hsl(${config.color1.h}, 100%, 50%)`;
-	}
+function createTriColorGradient(radius) {
+	// Linear gradient spanning Left (-R) to Right (+R)
+	// Left = Electric Blue | Center = Hot Pink | Right = Yellow
+	const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
+	grad.addColorStop(0.0, COLOR_BLUE);
+	grad.addColorStop(0.48, COLOR_PINK);
+	grad.addColorStop(1.0, COLOR_YELLOW);
+	return grad;
 }
 
-// Helper to get a single solid color for an individual bar based on its angle
+// Solid 3-color map for individual bars based on position around circle
 function getBarSolidColor(progress) {
-	// progress is 0.0 to 1.0 around the circle
-	let h;
-	if (progress < 0.5) {
-		// Transition from Electric Blue (195) to Pink (330)
-		const t = progress / 0.5;
-		h = config.color1.h + (config.color2.h - config.color1.h) * t;
-	} else {
-		// Transition from Pink (330) to Yellow (45)
-		const t = (progress - 0.5) / 0.5;
-		// 330 deg to 405 deg (45 + 360) for smooth hue wheel interpolation
-		const targetHue = config.color3.h < config.color2.h ? config.color3.h + 360 : config.color3.h;
-		h = (config.color2.h + (targetHue - config.color2.h) * t) % 360;
+	// Angle in degrees (0 = Right / Yellow side, 180 = Left / Blue side)
+	const angleDeg = progress * 360;
+
+	// Right side (315° to 45°) -> Yellow
+	if (angleDeg >= 315 || angleDeg < 45) {
+		return COLOR_YELLOW;
 	}
-	return `hsl(${h}, 100%, 50%)`;
+	// Left side (135° to 225°) -> Electric Blue
+	else if (angleDeg >= 135 && angleDeg < 225) {
+		return COLOR_BLUE;
+	}
+	// Top & Bottom regions (Blends) -> Hot Pink
+	else {
+		return COLOR_PINK;
+	}
 }
 
 function draw() {
@@ -103,36 +84,32 @@ function draw() {
 	const audioData = getSimulatedAudioData(config.barCount);
 	const intensity = audioData[0] / 255;
 
-	// 1. DYNAMIC SCALING: Fill ~95% of the container box
+	// 1. DYNAMIC SCALING: Fill ~92% of the container
 	const minDimension = Math.min(rect.width, rect.height);
-	const maxOuterRadius = minDimension * 0.475;
+	const maxOuterRadius = minDimension * 0.46; // Radius = 46% (Diameter = 92%)
 
-	const dynamicInnerRadius = maxOuterRadius * 0.70;
-	const dynamicMaxBarHeight = maxOuterRadius * 0.30;
-	const dynamicMinBarHeight = config.minBarHeight || 5;
+	const dynamicInnerRadius = maxOuterRadius * 0.72;
+	const dynamicMaxBarHeight = maxOuterRadius * 0.28;
+	const dynamicMinBarHeight = config.minBarHeight;
 
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
-	// 2. Draw 8 Concentric Inner Circles with DIFFERENT / EXPONENTIAL SPACING
-	const numRings = 8;
+	// 2. Draw Concentric Inner Circles with Custom Spacing
+	RING_SPACING_FACTORS.forEach((factor, index) => {
+		const baseRadius = dynamicInnerRadius * factor;
+		const currentRadius = baseRadius * (0.97 + intensity * 0.05);
 
-	for (let r = 1; r <= numRings; r++) {
-		// Non-uniform spacing: power function creates tighter spacing near center, wider towards edge
-		const normalizedRatio = Math.pow(r / numRings, 1.4);
-		const baseRadius = dynamicInnerRadius * normalizedRatio;
+		ctx.strokeStyle = createTriColorGradient(currentRadius);
+		// Vary line weights like the reference image
+		ctx.lineWidth = (index === 0 || index === 2 || index === 4) ? 3 : 1.5;
 
-		// Apply audio pulse animation
-		const currentRadius = baseRadius * (0.96 + intensity * 0.08);
-
-		ctx.strokeStyle = getRingStrokeStyle(r - 1, numRings, currentRadius);
-		ctx.lineWidth = r % 2 === 0 ? 3 : 1.5;
 		ctx.beginPath();
 		ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 		ctx.stroke();
-	}
+	});
 
-	// 3. Draw Outer Radial Audio Bars with SINGLE SOLID COLOR per bar
+	// 3. Draw Outer Radial Audio Bars with Single 3-Color Sections
 	for (let i = 0; i < config.barCount; i++) {
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
@@ -145,9 +122,8 @@ function draw() {
 		const endX = Math.cos(angle) * (dynamicInnerRadius + barHeight);
 		const endY = Math.sin(angle) * (dynamicInnerRadius + barHeight);
 
-		// Assign one solid HSL color per bar
 		ctx.strokeStyle = getBarSolidColor(progress);
-		ctx.lineWidth = Math.max(2, (dynamicInnerRadius * Math.PI * 2) / config.barCount / 1.5);
+		ctx.lineWidth = Math.max(2.5, (dynamicInnerRadius * Math.PI * 2) / config.barCount / 1.4);
 		ctx.lineCap = 'round';
 		ctx.beginPath();
 		ctx.moveTo(startX, startY);
@@ -158,4 +134,4 @@ function draw() {
 	ctx.restore();
 }
 
-draw();s
+draw();
