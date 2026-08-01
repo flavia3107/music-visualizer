@@ -129,6 +129,14 @@ input[type="range"] {
 	transition: all 0.2s ease;
 }
 
+.action-btn {
+	width: 2rem;
+	height: 2rem;
+	background: transparent;
+	border: none;
+	color: #e1e1e1;
+}
+
 .btn-secondary {
 	width: 85%;
 }
