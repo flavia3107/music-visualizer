@@ -136,14 +136,7 @@ function draw() {
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
-	// --- NEON GLOW CONFIGURATION ---
-	// Sets the glow color to white/cyan tint and controls blur radius
-	ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-	ctx.shadowBlur = 15;
-	ctx.shadowOffsetX = 0;
-	ctx.shadowOffsetY = 0;
-
-	// 1. Draw 8 Concentric Circles with Neon Glow
+	// 1. Draw 8 Concentric Circles with Selective Neon Glow
 	RING_SPACING_FACTORS.forEach((factor, index) => {
 		const ringNumber = index + 1;
 		const baseRadius = dynamicInnerRadius * factor;
@@ -152,12 +145,42 @@ function draw() {
 		ctx.strokeStyle = getRingGradient(ringNumber, currentRadius);
 		ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5;
 
-		// Dynamic shadow blur reacting slightly to audio pulse
-		ctx.shadowBlur = 10 + (intensity * 12);
+		// Apply neon glow ONLY if ring contains bright colors
+		if ([1, 3, 5, 8].includes(ringNumber)) {
+			ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+			ctx.shadowBlur = 10 + (intensity * 12);
+			ctx.beginPath();
+			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+			ctx.stroke();
+		} else if (ringNumber === 7) {
+			// Ring 7 (Electric Blue / Dull Pink split):
+			// Pass 1: Draw non-glowing background ring
+			ctx.shadowColor = 'transparent';
+			ctx.shadowBlur = 0;
+			ctx.beginPath();
+			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+			ctx.stroke();
 
-		ctx.beginPath();
-		ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
-		ctx.stroke();
+			// Pass 2: Overlay glow strictly on the Electric Blue half
+			ctx.save();
+			ctx.beginPath();
+			ctx.rect(-currentRadius - 10, -currentRadius - 10, currentRadius + 10, (currentRadius + 10) * 2);
+			ctx.clip(); // Restrict glow pass to the left (blue) side
+
+			ctx.shadowColor = COLOR_BLUE;
+			ctx.shadowBlur = 10 + (intensity * 12);
+			ctx.beginPath();
+			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+			ctx.stroke();
+			ctx.restore();
+		} else {
+			// Dull/transparent rings (2, 4, 6) remain flat matte
+			ctx.shadowColor = 'transparent';
+			ctx.shadowBlur = 0;
+			ctx.beginPath();
+			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
+			ctx.stroke();
+		}
 	});
 
 	// 2. Draw Outer Bars with Sector-Matched Neon Glow
@@ -176,7 +199,7 @@ function draw() {
 		const color = getPureBarColor(progress);
 		ctx.strokeStyle = color;
 
-		// Match glow color directly to the bar color for stronger neon pop
+		// All outer bars are bright base colors, so they all glow in their respective color
 		ctx.shadowColor = color;
 		ctx.shadowBlur = 8 + ((value / 255) * 10);
 
