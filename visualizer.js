@@ -30,7 +30,7 @@ const COLOR_TRANSPARENT = 'hsla(0, 0%, 0%, 0)';        // Transparent
 
 const config = {
 	barCount: 140,
-	minBarHeight: 4
+	minBarHeight: 0
 };
 
 let simRotation = 0;
