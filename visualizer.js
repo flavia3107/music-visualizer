@@ -20,10 +20,13 @@ function adjustCanvasSize() {
 window.addEventListener('resize', adjustCanvasSize);
 adjustCanvasSize();
 
-// 3 Core Hues: Blue (~195°), Pink (~320°), Yellow (~50°)
-const HUE_BLUE = 195;
-const HUE_PINK = 320;
-const HUE_YELLOW = 50;
+// Base Color Palettes
+const COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';    // Electric Blue
+const COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';   // Dull Electric Blue
+const COLOR_PINK = 'hsla(320, 100%, 55%, 1)';    // Hot Pink
+const COLOR_DULL_PINK = 'hsla(320, 45%, 50%, 0.7)';   // Dull Pink
+const COLOR_YELLOW = 'hsla(50, 100%, 50%, 1)';     // Bright Yellow
+const COLOR_TRANSPARENT = 'hsla(0, 0%, 0%, 0)';        // Transparent
 
 const config = {
 	barCount: 140,
@@ -42,60 +45,94 @@ function getSimulatedAudioData(bufferLength) {
 	return data;
 }
 
-// 7 Ring Spacing multipliers (2 close, space, 2 close, 1 near edge)
-const RING_SPACING_FACTORS = [0.20, 0.26, 0.46, 0.60, 0.75, 0.80, 0.93];
+// 8 Ring Spacing multipliers (Inner to Outer)
+const RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 
-// Dynamic Ring Gradients with varied angles and color stop variations
-function createDynamicRingGradient(index, totalRings, radius) {
-	// Offset angle per ring so gradient lines don't stack uniformly
-	const angleOffset = (index / totalRings) * (Math.PI / 2) - Math.PI / 4;
+// Map exact specified color themes to each ring index (1 to 8)
+function getRingGradient(ringNumber, radius) {
+	const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
 
-	const x0 = Math.cos(angleOffset) * -radius;
-	const y0 = Math.sin(angleOffset) * -radius;
-	const x1 = Math.cos(angleOffset) * radius;
-	const y1 = Math.sin(angleOffset) * radius;
+	switch (ringNumber) {
+		// 1 - half electric blue half pink
+		case 1:
+			grad.addColorStop(0.00, COLOR_BLUE);
+			grad.addColorStop(0.50, COLOR_BLUE);
+			grad.addColorStop(0.5001, COLOR_PINK);
+			grad.addColorStop(1.00, COLOR_PINK);
+			break;
 
-	const grad = ctx.createLinearGradient(x0, y0, x1, y1);
+		// 2 - half dull electric blue - half dull pink
+		case 2:
+			grad.addColorStop(0.00, COLOR_DULL_BLUE);
+			grad.addColorStop(0.50, COLOR_DULL_BLUE);
+			grad.addColorStop(0.5001, COLOR_DULL_PINK);
+			grad.addColorStop(1.00, COLOR_DULL_PINK);
+			break;
 
-	// Vary color combinations depending on the ring depth
-	if (index % 3 === 0) {
-		// Inner/Alternate Rings: Blue -> Pink -> Yellow
-		grad.addColorStop(0.0, `hsl(${HUE_BLUE}, 100%, 50%)`);
-		grad.addColorStop(0.5, `hsl(${HUE_PINK}, 100%, 55%)`);
-		grad.addColorStop(1.0, `hsl(${HUE_YELLOW}, 100%, 50%)`);
-	} else if (index % 3 === 1) {
-		// Shifted focus: Pink -> Blue -> Yellow
-		grad.addColorStop(0.0, `hsl(${HUE_PINK}, 100%, 55%)`);
-		grad.addColorStop(0.4, `hsl(${HUE_BLUE}, 100%, 50%)`);
-		grad.addColorStop(1.0, `hsl(${HUE_YELLOW}, 100%, 50%)`);
-	} else {
-		// Outer focused: Blue -> Yellow -> Pink
-		grad.addColorStop(0.0, `hsl(${HUE_BLUE}, 100%, 50%)`);
-		grad.addColorStop(0.6, `hsl(${HUE_YELLOW}, 100%, 50%)`);
-		grad.addColorStop(1.0, `hsl(${HUE_PINK}, 100%, 55%)`);
+		// 3 - half pink half yellow
+		case 3:
+			grad.addColorStop(0.00, COLOR_PINK);
+			grad.addColorStop(0.50, COLOR_PINK);
+			grad.addColorStop(0.5001, COLOR_YELLOW);
+			grad.addColorStop(1.00, COLOR_YELLOW);
+			break;
+
+		// 4 - half dull pink half dull blue
+		case 4:
+			grad.addColorStop(0.00, COLOR_DULL_PINK);
+			grad.addColorStop(0.50, COLOR_DULL_PINK);
+			grad.addColorStop(0.5001, COLOR_DULL_BLUE);
+			grad.addColorStop(1.00, COLOR_DULL_BLUE);
+			break;
+
+		// 5 - half hot pink half electric blue
+		case 5:
+			grad.addColorStop(0.00, COLOR_PINK);
+			grad.addColorStop(0.50, COLOR_PINK);
+			grad.addColorStop(0.5001, COLOR_BLUE);
+			grad.addColorStop(1.00, COLOR_BLUE);
+			break;
+
+		// 6 - half dull blue half transparent
+		case 6:
+			grad.addColorStop(0.00, COLOR_DULL_BLUE);
+			grad.addColorStop(0.50, COLOR_DULL_BLUE);
+			grad.addColorStop(0.5001, COLOR_TRANSPARENT);
+			grad.addColorStop(1.00, COLOR_TRANSPARENT);
+			break;
+
+		// 7 - half electric blue half dull pink
+		case 7:
+			grad.addColorStop(0.00, COLOR_BLUE);
+			grad.addColorStop(0.50, COLOR_BLUE);
+			grad.addColorStop(0.5001, COLOR_DULL_PINK);
+			grad.addColorStop(1.00, COLOR_DULL_PINK);
+			break;
+
+		// 8 - half electric blue, half bright yellow (single unified yellow section)
+		case 8:
+			grad.addColorStop(0.00, COLOR_BLUE);
+			grad.addColorStop(0.50, COLOR_BLUE);
+			grad.addColorStop(0.5001, COLOR_YELLOW);
+			grad.addColorStop(1.00, COLOR_YELLOW);
+			break;
+
+		default:
+			grad.addColorStop(0, COLOR_BLUE);
+			grad.addColorStop(1, COLOR_PINK);
 	}
+
 	return grad;
 }
-
-// Smoothly blend solid bar colors across the perimeter (Blue -> Pink -> Yellow sweep)
-function getBarSolidColor(progress) {
-	let hue;
-	// Map progress (0 to 1) smoothly across Blue (195) -> Pink (320) -> Yellow (410deg / 50deg)
-	if (progress < 0.35) {
-		// Sweep Blue to Pink
-		const t = progress / 0.35;
-		hue = HUE_BLUE + (HUE_PINK - HUE_BLUE) * t;
-	} else if (progress < 0.70) {
-		// Sweep Pink to Yellow
-		const t = (progress - 0.35) / 0.35;
-		hue = HUE_PINK + (410 - HUE_PINK) * t; // 410 = 360 + 50 (Yellow)
+// Outer Bars: Clean sharp sectores matching overall theme
+function getPureBarColor(progress) {
+	if (progress < 0.33) {
+		return COLOR_BLUE;
+	} else if (progress < 0.66) {
+		return COLOR_PINK;
 	} else {
-		// Sweep Yellow back to Blue
-		const t = (progress - 0.70) / 0.30;
-		hue = 410 + (555 - 410) * t; // 555 = 360 + 195 (Blue)
+		return COLOR_YELLOW;
 	}
-
-	return `hsl(${hue % 360}, 100%, 50%)`;
 }
 
 function draw() {
@@ -107,7 +144,7 @@ function draw() {
 	const audioData = getSimulatedAudioData(config.barCount);
 	const intensity = audioData[0] / 255;
 
-	// 1. Fill ~92% of the container
+	// Scale ~92% of container
 	const minDimension = Math.min(rect.width, rect.height);
 	const maxOuterRadius = minDimension * 0.46;
 
@@ -118,20 +155,21 @@ function draw() {
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
-	// 2. Draw Inner Circles with Custom Spacing & Dynamic Angled Gradients
+	// 1. Draw 8 Concentric Circles with exact requested color rules
 	RING_SPACING_FACTORS.forEach((factor, index) => {
+		const ringNumber = index + 1; // 1 through 8
 		const baseRadius = dynamicInnerRadius * factor;
 		const currentRadius = baseRadius * (0.97 + intensity * 0.05);
 
-		ctx.strokeStyle = createDynamicRingGradient(index, RING_SPACING_FACTORS.length, currentRadius);
-		ctx.lineWidth = (index === 0 || index === 2 || index === 4) ? 3 : 1.5;
+		ctx.strokeStyle = getRingGradient(ringNumber, currentRadius);
+		ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5; // Alternating stroke width
 
 		ctx.beginPath();
 		ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 		ctx.stroke();
 	});
 
-	// 3. Draw Outer Bars with Smooth Color Transitions
+	// 2. Draw Outer Bars
 	for (let i = 0; i < config.barCount; i++) {
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
@@ -144,7 +182,7 @@ function draw() {
 		const endX = Math.cos(angle) * (dynamicInnerRadius + barHeight);
 		const endY = Math.sin(angle) * (dynamicInnerRadius + barHeight);
 
-		ctx.strokeStyle = getBarSolidColor(progress);
+		ctx.strokeStyle = getPureBarColor(progress);
 		ctx.lineWidth = Math.max(2.5, (dynamicInnerRadius * Math.PI * 2) / config.barCount / 1.4);
 		ctx.lineCap = 'round';
 		ctx.beginPath();
