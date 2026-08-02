@@ -94,9 +94,12 @@ function getRingGradient(ringNumber, radius) {
 			grad.addColorStop(1.00, COLOR_DULL_PINK);
 			break;
 		case 8:
+			// Left = Blue, Center Top/Bottom = Pink, Right = Yellow
 			grad.addColorStop(0.00, COLOR_BLUE);
-			grad.addColorStop(0.50, COLOR_BLUE);
-			grad.addColorStop(0.5001, COLOR_YELLOW);
+			grad.addColorStop(0.35, COLOR_BLUE);
+			grad.addColorStop(0.45, COLOR_PINK);
+			grad.addColorStop(0.55, COLOR_PINK);
+			grad.addColorStop(0.65, COLOR_YELLOW);
 			grad.addColorStop(1.00, COLOR_YELLOW);
 			break;
 		default:
@@ -107,9 +110,17 @@ function getRingGradient(ringNumber, radius) {
 	return grad;
 }
 
-// Aligns bar colors directly with Ring 8's horizontal split (Blue on Left, Yellow on Right)
+// Aligns bar colors directly with Ring 8's 3-way distribution (Pink top/bottom divider)
 function getPureBarColor(angle) {
 	const cosVal = Math.cos(angle);
+	const sinVal = Math.sin(angle);
+
+	// Check if the bar is situated near the top or bottom of the circle
+	if (Math.abs(sinVal) > 0.85) {
+		return COLOR_PINK;
+	}
+
+	// Left vs Right division
 	return cosVal < 0 ? COLOR_BLUE : COLOR_YELLOW;
 }
 
