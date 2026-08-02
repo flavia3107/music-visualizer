@@ -25,24 +25,75 @@ const COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';    // Electric Blue
 const COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';   // Dull Electric Blue
 const COLOR_PINK = 'hsla(320, 100%, 55%, 1)';    // Hot Pink
 const COLOR_DULL_PINK = 'hsla(320, 45%, 50%, 0.7)';   // Dull Pink
-const COLOR_YELLOW = 'hsla(50, 100%, 50%, 1)';     // Bright Yellow
+const COLOR_YELLOW = 'hsla(45, 100%, 50%, 1)';     // Golden Yellow
 const COLOR_TRANSPARENT = 'hsla(0, 0%, 0%, 0)';        // Transparent
 
 const config = {
-	barCount: 140,
+	barCount: 160,
 	minBarHeight: 0
 };
 
+// Particle System for floating ambient glow dust
+class Particle {
+	constructor(x, y, angle, color) {
+		this.x = x;
+		this.y = y;
+		const speed = 0.5 + Math.random() * 2.5;
+		const spreadAngle = angle + (Math.random() - 0.5) * 0.6;
+		this.vx = Math.cos(spreadAngle) * speed;
+		this.vy = Math.sin(spreadAngle) * speed;
+		this.size = 1 + Math.random() * 2.5;
+		this.alpha = 1;
+		this.decay = 0.015 + Math.random() * 0.02;
+		this.color = color;
+	}
+
+	update() {
+		this.x += this.vx;
+		this.y += this.vy;
+		this.alpha -= this.decay;
+	}
+
+	draw(ctx) {
+		ctx.save();
+		ctx.globalAlpha = Math.max(0, this.alpha);
+		ctx.fillStyle = this.color;
+		ctx.shadowColor = this.color;
+		ctx.shadowBlur = 6;
+		ctx.beginPath();
+		ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
+	}
+}
+
+const particles = [];
+
 let simRotation = 0;
 function getSimulatedAudioData(bufferLength) {
-	const data = new Uint8Array(bufferLength);
+	const raw = new Uint8Array(bufferLength);
 	for (let i = 0; i < bufferLength; i++) {
-		const base = Math.sin(i * 0.08 + simRotation * 2) * 50 + 50;
-		const pulse = Math.sin(simRotation * 4) * 35;
-		data[i] = Math.max(0, base + pulse + (Math.random() * 15));
+		const norm = i / bufferLength;
+		// Shape audio into smooth peaks similar to the reference image
+		const wave1 = Math.sin(norm * Math.PI * 4 + simRotation * 2) * 50;
+		const wave2 = Math.cos(norm * Math.PI * 2 - simRotation * 1.5) * 40;
+		const peak = Math.exp(-Math.pow((norm - 0.25) * 6, 2)) * 120; // Big left side wave peak
+
+		const val = Math.max(0, wave1 + wave2 + peak + (Math.random() * 8));
+		raw[i] = Math.min(255, val);
 	}
-	simRotation += 0.01;
-	return data;
+	simRotation += 0.012;
+
+	// Apply smoothing filter across neighbors for sleek crests
+	const smoothed = new Uint8Array(bufferLength);
+	for (let i = 0; i < bufferLength; i++) {
+		const prev = raw[(i - 1 + bufferLength) % bufferLength];
+		const curr = raw[i];
+		const next = raw[(i + 1) % bufferLength];
+		smoothed[i] = (prev * 0.25) + (curr * 0.5) + (next * 0.25);
+	}
+
+	return smoothed;
 }
 
 const RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
@@ -94,7 +145,6 @@ function getRingGradient(ringNumber, radius) {
 			grad.addColorStop(1.00, COLOR_DULL_PINK);
 			break;
 		case 8:
-			// Left = Blue, Center Top/Bottom = Pink, Right = Yellow
 			grad.addColorStop(0.00, COLOR_BLUE);
 			grad.addColorStop(0.35, COLOR_BLUE);
 			grad.addColorStop(0.45, COLOR_PINK);
@@ -110,12 +160,11 @@ function getRingGradient(ringNumber, radius) {
 	return grad;
 }
 
-// Aligns bar colors directly with Ring 8's 3-way distribution (Pink top/bottom divider)
 function getPureBarColor(angle) {
 	const cosVal = Math.cos(angle);
 	const sinVal = Math.sin(angle);
 
-	if (Math.abs(sinVal) > 0.85) {
+	if (Math.abs(sinVal) > 0.82) {
 		return COLOR_PINK;
 	}
 
@@ -132,22 +181,20 @@ function draw() {
 	const intensity = audioData[0] / 255;
 
 	const minDimension = Math.min(rect.width, rect.height);
-	const maxOuterRadius = minDimension * 0.46;
+	const maxOuterRadius = minDimension * 0.44;
 
-	// Base inner radius factor from Ring 8
 	const ring8Factor = RING_SPACING_FACTORS[RING_SPACING_FACTORS.length - 1];
 	const baseInnerRadius = maxOuterRadius * 0.72;
 
-	// Shared dynamic radius for Ring 8 and Bars:
 	const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.97 + intensity * 0.05);
 
-	const dynamicMaxBarHeight = maxOuterRadius * 0.28;
+	const dynamicMaxBarHeight = maxOuterRadius * 0.35;
 	const dynamicMinBarHeight = config.minBarHeight;
 
 	ctx.save();
 	ctx.translate(centerX, centerY);
 
-	// 1. Draw 8 Concentric Circles with Selective Neon Glow
+	// 1. Draw Concentric Circles
 	RING_SPACING_FACTORS.forEach((factor, index) => {
 		const ringNumber = index + 1;
 		const baseRadius = baseInnerRadius * factor;
@@ -158,7 +205,7 @@ function draw() {
 
 		if ([1, 3, 5, 8].includes(ringNumber)) {
 			ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-			ctx.shadowBlur = 10 + (intensity * 12);
+			ctx.shadowBlur = 8 + (intensity * 10);
 			ctx.beginPath();
 			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 			ctx.stroke();
@@ -175,7 +222,7 @@ function draw() {
 			ctx.clip();
 
 			ctx.shadowColor = COLOR_BLUE;
-			ctx.shadowBlur = 10 + (intensity * 12);
+			ctx.shadowBlur = 8 + (intensity * 10);
 			ctx.beginPath();
 			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 			ctx.stroke();
@@ -189,14 +236,13 @@ function draw() {
 		}
 	});
 
-	// 2. Draw Outer Bars (Slim, Distinct Bars with Narrow Shadow)
+	// 2. Draw Sleek Outer Pill Bars
 	const circum = dynamicRing8Radius * Math.PI * 2;
-	// Leave clear spacing gaps by calculating narrow line widths per bar count
-	const slimBarWidth = Math.max(1.2, (circum / config.barCount) * 0.45);
+	const barWidth = Math.max(1.8, (circum / config.barCount) * 0.55);
 
 	for (let i = 0; i < config.barCount; i++) {
 		const value = audioData[i];
-		if (value === 0) continue;
+		if (value < 2) continue;
 
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
@@ -210,16 +256,32 @@ function draw() {
 		const color = getPureBarColor(angle);
 		ctx.strokeStyle = color;
 
-		// Slim, tight shadow blur for crisp separation
+		// Smooth glow
 		ctx.shadowColor = color;
-		ctx.shadowBlur = 2 + ((value / 255) * 4);
+		ctx.shadowBlur = 4 + ((value / 255) * 6);
 
-		ctx.lineWidth = slimBarWidth;
+		ctx.lineWidth = barWidth;
 		ctx.lineCap = 'round';
 		ctx.beginPath();
 		ctx.moveTo(startX, startY);
 		ctx.lineTo(endX, endY);
 		ctx.stroke();
+
+		// Spawn ambient particles from active bar tips
+		if (value > 60 && Math.random() < 0.25) {
+			particles.push(new Particle(endX, endY, angle, color));
+		}
+	}
+
+	// 3. Update & Draw Particles
+	for (let i = particles.length - 1; i >= 0; i--) {
+		const p = particles[i];
+		p.update();
+		if (p.alpha <= 0) {
+			particles.splice(i, 1);
+		} else {
+			p.draw(ctx);
+		}
 	}
 
 	ctx.restore();
