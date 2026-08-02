@@ -129,7 +129,13 @@ function draw() {
 	const minDimension = Math.min(rect.width, rect.height);
 	const maxOuterRadius = minDimension * 0.46;
 
-	const dynamicInnerRadius = maxOuterRadius * 0.72;
+	// Base inner radius factor from Ring 8
+	const ring8Factor = RING_SPACING_FACTORS[RING_SPACING_FACTORS.length - 1];
+	const baseInnerRadius = maxOuterRadius * 0.72;
+
+	// Shared dynamic dynamic radius for Ring 8 and Bars:
+	const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.97 + intensity * 0.05);
+
 	const dynamicMaxBarHeight = maxOuterRadius * 0.28;
 	const dynamicMinBarHeight = config.minBarHeight;
 
@@ -139,13 +145,12 @@ function draw() {
 	// 1. Draw 8 Concentric Circles with Selective Neon Glow
 	RING_SPACING_FACTORS.forEach((factor, index) => {
 		const ringNumber = index + 1;
-		const baseRadius = dynamicInnerRadius * factor;
+		const baseRadius = baseInnerRadius * factor;
 		const currentRadius = baseRadius * (0.97 + intensity * 0.05);
 
 		ctx.strokeStyle = getRingGradient(ringNumber, currentRadius);
 		ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5;
 
-		// Apply neon glow ONLY if ring contains bright colors
 		if ([1, 3, 5, 8].includes(ringNumber)) {
 			ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
 			ctx.shadowBlur = 10 + (intensity * 12);
@@ -153,19 +158,16 @@ function draw() {
 			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 			ctx.stroke();
 		} else if (ringNumber === 7) {
-			// Ring 7 (Electric Blue / Dull Pink split):
-			// Pass 1: Draw non-glowing background ring
 			ctx.shadowColor = 'transparent';
 			ctx.shadowBlur = 0;
 			ctx.beginPath();
 			ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 			ctx.stroke();
 
-			// Pass 2: Overlay glow strictly on the Electric Blue half
 			ctx.save();
 			ctx.beginPath();
 			ctx.rect(-currentRadius - 10, -currentRadius - 10, currentRadius + 10, (currentRadius + 10) * 2);
-			ctx.clip(); // Restrict glow pass to the left (blue) side
+			ctx.clip();
 
 			ctx.shadowColor = COLOR_BLUE;
 			ctx.shadowBlur = 10 + (intensity * 12);
@@ -174,7 +176,6 @@ function draw() {
 			ctx.stroke();
 			ctx.restore();
 		} else {
-			// Dull/transparent rings (2, 4, 6) remain flat matte
 			ctx.shadowColor = 'transparent';
 			ctx.shadowBlur = 0;
 			ctx.beginPath();
@@ -183,7 +184,7 @@ function draw() {
 		}
 	});
 
-	// 2. Draw Outer Bars with Sector-Matched Neon Glow
+	// 2. Draw Outer Bars attached directly to Ring 8 (Zero Spacing)
 	for (let i = 0; i < config.barCount; i++) {
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
@@ -191,19 +192,19 @@ function draw() {
 
 		const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
 
-		const startX = Math.cos(angle) * dynamicInnerRadius;
-		const startY = Math.sin(angle) * dynamicInnerRadius;
-		const endX = Math.cos(angle) * (dynamicInnerRadius + barHeight);
-		const endY = Math.sin(angle) * (dynamicInnerRadius + barHeight);
+		// Start directly at the dynamic outer ring radius
+		const startX = Math.cos(angle) * dynamicRing8Radius;
+		const startY = Math.sin(angle) * dynamicRing8Radius;
+		const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
+		const endY = Math.sin(angle) * (dynamicRing8Radius + barHeight);
 
 		const color = getPureBarColor(progress);
 		ctx.strokeStyle = color;
 
-		// All outer bars are bright base colors, so they all glow in their respective color
 		ctx.shadowColor = color;
 		ctx.shadowBlur = 8 + ((value / 255) * 10);
 
-		ctx.lineWidth = Math.max(2.5, (dynamicInnerRadius * Math.PI * 2) / config.barCount / 1.4);
+		ctx.lineWidth = Math.max(2.5, (dynamicRing8Radius * Math.PI * 2) / config.barCount / 1.4);
 		ctx.lineCap = 'round';
 		ctx.beginPath();
 		ctx.moveTo(startX, startY);
@@ -213,5 +214,4 @@ function draw() {
 
 	ctx.restore();
 }
-
 draw();
