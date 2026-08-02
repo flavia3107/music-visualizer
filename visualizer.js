@@ -107,14 +107,10 @@ function getRingGradient(ringNumber, radius) {
 	return grad;
 }
 
-function getPureBarColor(progress) {
-	if (progress < 0.33) {
-		return COLOR_BLUE;
-	} else if (progress < 0.66) {
-		return COLOR_PINK;
-	} else {
-		return COLOR_YELLOW;
-	}
+// Aligns bar colors directly with Ring 8's horizontal split (Blue on Left, Yellow on Right)
+function getPureBarColor(angle) {
+	const cosVal = Math.cos(angle);
+	return cosVal < 0 ? COLOR_BLUE : COLOR_YELLOW;
 }
 
 function draw() {
@@ -133,7 +129,7 @@ function draw() {
 	const ring8Factor = RING_SPACING_FACTORS[RING_SPACING_FACTORS.length - 1];
 	const baseInnerRadius = maxOuterRadius * 0.72;
 
-	// Shared dynamic dynamic radius for Ring 8 and Bars:
+	// Shared dynamic radius for Ring 8 and Bars:
 	const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.97 + intensity * 0.05);
 
 	const dynamicMaxBarHeight = maxOuterRadius * 0.28;
@@ -186,20 +182,21 @@ function draw() {
 
 	// 2. Draw Outer Bars attached directly to Ring 8 (Zero Spacing)
 	for (let i = 0; i < config.barCount; i++) {
+		const value = audioData[i];
+		if (value === 0) continue;
+
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
-		const value = audioData[i];
-		// Skip drawing entirely if the bar value is zero
-		if (value === 0) continue;
+
 		const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
 
-		// Start directly at the dynamic outer ring radius
 		const startX = Math.cos(angle) * dynamicRing8Radius;
 		const startY = Math.sin(angle) * dynamicRing8Radius;
 		const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
 		const endY = Math.sin(angle) * (dynamicRing8Radius + barHeight);
 
-		const color = getPureBarColor(progress);
+		// Color bars according to the angle match on Ring 8
+		const color = getPureBarColor(angle);
 		ctx.strokeStyle = color;
 
 		ctx.shadowColor = color;
@@ -215,4 +212,5 @@ function draw() {
 
 	ctx.restore();
 }
+
 draw();
