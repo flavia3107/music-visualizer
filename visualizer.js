@@ -122,11 +122,6 @@ function getPureBarColor(angle) {
 	return cosVal < 0 ? COLOR_BLUE : COLOR_YELLOW;
 }
 
-// Helper to convert base hsla string into custom alpha values for light rays
-function getRayColorWithAlpha(colorString, alpha) {
-	return colorString.replace(/[\d\.]+\)$/g, `${alpha})`);
-}
-
 function draw() {
 	requestAnimationFrame(draw);
 
@@ -194,8 +189,10 @@ function draw() {
 		}
 	});
 
-	// 2. Draw Outer Bars styled as Fanning Sun Rays
-	const angleStep = (Math.PI * 2) / config.barCount;
+	// 2. Draw Outer Bars (Slim, Distinct Bars with Narrow Shadow)
+	const circum = dynamicRing8Radius * Math.PI * 2;
+	// Leave clear spacing gaps by calculating narrow line widths per bar count
+	const slimBarWidth = Math.max(1.2, (circum / config.barCount) * 0.45);
 
 	for (let i = 0; i < config.barCount; i++) {
 		const value = audioData[i];
@@ -205,60 +202,20 @@ function draw() {
 		const angle = progress * Math.PI * 2;
 		const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
 
-		const baseColor = getPureBarColor(angle);
+		const startX = Math.cos(angle) * dynamicRing8Radius;
+		const startY = Math.sin(angle) * dynamicRing8Radius;
+		const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
+		const endY = Math.sin(angle) * (dynamicRing8Radius + barHeight);
 
-		// Calculate Ray Widths: Narrow at base, wider at outer tip
-		const innerRadius = dynamicRing8Radius;
-		const outerRadius = dynamicRing8Radius + barHeight;
+		const color = getPureBarColor(angle);
+		ctx.strokeStyle = color;
 
-		// Base width is half the available angle step, fanning out by 2.2x at the tip
-		const innerHalfWidth = (angleStep * 0.25);
-		const outerHalfWidth = (angleStep * 0.55);
+		// Slim, tight shadow blur for crisp separation
+		ctx.shadowColor = color;
+		ctx.shadowBlur = 2 + ((value / 255) * 4);
 
-		// Ray Corner Coordinates
-		const aInnerLeft = angle - innerHalfWidth;
-		const aInnerRight = angle + innerHalfWidth;
-		const aOuterLeft = angle - outerHalfWidth;
-		const aOuterRight = angle + outerHalfWidth;
-
-		const x1 = Math.cos(aInnerLeft) * innerRadius;
-		const y1 = Math.sin(aInnerLeft) * innerRadius;
-		const x2 = Math.cos(aOuterLeft) * outerRadius;
-		const y2 = Math.sin(aOuterLeft) * outerRadius;
-		const x3 = Math.cos(aOuterRight) * outerRadius;
-		const y3 = Math.sin(aOuterRight) * outerRadius;
-		const x4 = Math.cos(aInnerRight) * innerRadius;
-		const y4 = Math.sin(aInnerRight) * innerRadius;
-
-		// Create Radial Linear Gradient for Sun Ray Fade
-		const startX = Math.cos(angle) * innerRadius;
-		const startY = Math.sin(angle) * innerRadius;
-		const endX = Math.cos(angle) * outerRadius;
-		const endY = Math.sin(angle) * outerRadius;
-
-		const rayGrad = ctx.createLinearGradient(startX, startY, endX, endY);
-		rayGrad.addColorStop(0.0, getRayColorWithAlpha(baseColor, 0.95)); // Bright solid base
-		rayGrad.addColorStop(0.7, getRayColorWithAlpha(baseColor, 0.60)); // Soft mid beam
-		rayGrad.addColorStop(1.0, getRayColorWithAlpha(baseColor, 0.05)); // Translucent soft tip
-
-		// Pass 1: Outer Fanned Beam (Trapezoid)
-		ctx.shadowColor = baseColor;
-		ctx.shadowBlur = 10 + ((value / 255) * 12);
-		ctx.fillStyle = rayGrad;
-
-		ctx.beginPath();
-		ctx.moveTo(x1, y1);
-		ctx.lineTo(x2, y2);
-		ctx.lineTo(x3, y3);
-		ctx.lineTo(x4, y4);
-		ctx.closePath();
-		ctx.fill();
-
-		// Pass 2: Intense Center Beam Core
-		ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-		ctx.shadowBlur = 6;
-		ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
-		ctx.lineWidth = 1;
+		ctx.lineWidth = slimBarWidth;
+		ctx.lineCap = 'round';
 		ctx.beginPath();
 		ctx.moveTo(startX, startY);
 		ctx.lineTo(endX, endY);
