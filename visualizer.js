@@ -189,7 +189,8 @@ function draw() {
 		const progress = i / config.barCount;
 		const angle = progress * Math.PI * 2;
 		const value = audioData[i];
-
+		// Skip drawing entirely if the bar value is zero
+		if (value === 0) continue;
 		const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
 
 		// Start directly at the dynamic outer ring radius
