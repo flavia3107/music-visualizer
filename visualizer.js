@@ -288,3 +288,5 @@ function draw() {
 }
 
 draw();
+
+// refactor - clean up
