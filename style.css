@@ -10,13 +10,13 @@ body,
 html {
 	margin: 0;
 	padding: 0;
-	width: 100%;
-	height: 100%;
-	overflow: hidden;
-	background-attachment: fixed;
+	min-width: 100vw;
+	min-height: 100vh;
 	font-family: "Inter", sans-serif;
 	color: var(--font-color);
 	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
+	background-attachment: fixed;
+	background-repeat: no-repeat;
 }
 
 #mainCanvas {
@@ -34,8 +34,6 @@ html {
 	flex-direction: column;
 	padding: 20px;
 	box-sizing: border-box;
-	pointer-events: none;
-	overflow: auto;
 }
 
 .ui-container * {
