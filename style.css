@@ -97,7 +97,6 @@ h2 {
 	margin-left: 20px;
 	display: flex;
 	flex-direction: column;
-	justify-content: space-between;
 	flex-shrink: 0;
 }
 
@@ -184,6 +183,12 @@ input[type="range"]::-moz-range-track {
 	display: flex;
 	flex-wrap: wrap;
 	gap: 10px;
+	margin-bottom: 1.5rem;
+}
+
+.theme-container {
+	padding-top: 1rem;
+	border-top: 1px solid #4e4e4e;
 }
 
 .modes-grid .mode-item {
@@ -201,7 +206,7 @@ input[type="range"]::-moz-range-track {
 	background: #ff4444;
 	font-weight: bold;
 	border: none;
-	margin-top: auto;
+	margin-top: 1rem;
 }
 
 .playlist {
@@ -228,10 +233,11 @@ input[type="range"]::-moz-range-track {
 	display: flex;
 	flex-direction: column;
 }
+
 .center-spacer {
 	display: flex;
 	flex-direction: column;
-	flex: 1; /* Takes remaining width between sidebars */
+	flex: 1;
 	height: 100%;
 	position: relative;
 }
