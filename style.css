@@ -1,32 +1,7 @@
 @import url("styles/file-upload.css");
 @import url("styles/general.css");
-
-:root {
-	--bg-top-left: #2d8db9;
-	--bg-mid: #0d0b1a;
-	--bg-bottom-right: #9b7d2b;
-	--panel-bg: #636c8870;
-	--font-color: #ebebeb;
-}
-
-body,
-html {
-	margin: 0;
-	padding: 0;
-	min-width: 100vw;
-	min-height: 100vh;
-	font-family: "Inter", sans-serif;
-	color: var(--font-color);
-	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
-	background-attachment: fixed;
-	background-repeat: no-repeat;
-}
-
-#mainCanvas {
-	width: 100%;
-	height: 100%;
-	z-index: 1;
-}
+@import url("styles/visualizer.css");
+@import url("styles/audio-track.css");
 
 .ui-container {
 	position: relative;
@@ -53,13 +28,6 @@ html {
 	min-height: 0;
 }
 
-.center-spacer {
-	flex: 1;
-	min-height: 30rem;
-	gap: 1rem;
-	min-width: 50rem;
-}
-
 .left-panel {
 	width: 320px;
 	margin-right: 20px;
@@ -74,38 +42,6 @@ html {
 	flex-shrink: 0;
 }
 
-.playback-bar {
-	height: 4rem;
-	margin-top: 20px;
-	margin-bottom: -1.25rem;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-shrink: 0;
-	border-radius: 12px 12px 0 0;
-	padding-top: 0rem;
-}
-
-input[type="range"] {
-	width: 80%;
-	margin: auto 0.5rem;
-	accent-color: #e1e1e1;
-}
-
-input[type="range"]::-webkit-slider-runnable-track,
-input[type="range"]::-moz-range-track {
-	border: none;
-}
-
-.progress {
-	width: 100%;
-	padding-top: 1rem;
-}
-
-.player-controls {
-	margin-top: 0.5rem;
-}
-
 .track,
 .mode-item {
 	margin-bottom: 8px;
@@ -116,13 +52,6 @@ input[type="range"]::-moz-range-track {
 .mode-item.active {
 	border-color: var(--accent-blue);
 	background: rgba(0, 243, 255, 0.1);
-}
-
-.track.active {
-	border-color: var(--accent-blue);
-	background: rgb(146 204 226 / 38%);
-	border-left: 4px solid #b8dafa;
-	border-radius: 0 6px 6px 0;
 }
 
 .modes-grid {
@@ -171,8 +100,9 @@ input[type="range"]::-moz-range-track {
 	position: relative;
 }
 
-#mainCanvas {
-	width: 100%;
-	height: 100%;
-	display: block;
+.track.active {
+	border-color: var(--accent-blue);
+	background: rgb(146 204 226 / 38%);
+	border-left: 4px solid #b8dafa;
+	border-radius: 0 6px 6px 0;
 }
