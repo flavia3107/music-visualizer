@@ -3,25 +3,4 @@
 @import url("styles/visualizer.css");
 @import url("styles/audio-track.css");
 @import url("styles/layout.css");
-
-.track {
-	margin-bottom: 8px;
-}
-
-.btn-party {
-	background: #ff4444;
-	font-weight: bold;
-	border: none;
-	margin-top: 1rem;
-}
-
-.playlist {
-	margin-top: 0.75rem;
-}
-
-.track.active {
-	border-color: var(--accent-blue);
-	background: rgb(146 204 226 / 38%);
-	border-left: 4px solid #b8dafa;
-	border-radius: 0 6px 6px 0;
-}
+@import url("styles/audio-list.css");

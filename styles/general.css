@@ -77,3 +77,10 @@ input:focus-visible {
 	outline: none;
 	cursor: auto;
 }
+
+.btn-party {
+	background: #ff4444;
+	font-weight: bold;
+	border: none;
+	margin-top: 1rem;
+}
