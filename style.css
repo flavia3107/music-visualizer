@@ -1,6 +1,7 @@
-@import url("styles/file-upload.css");
 @import url("styles/general.css");
+@import url("styles/layout.css");
+
+@import url("styles/file-upload.css");
 @import url("styles/visualizer.css");
 @import url("styles/audio-track.css");
-@import url("styles/layout.css");
 @import url("styles/audio-list.css");
