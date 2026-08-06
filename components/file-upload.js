@@ -5,6 +5,7 @@ audioElement.crossOrigin = 'anonymous';
 // DOM Elements
 const fileInput = document.getElementById('audio-file-input');
 const selectFileBtn = document.getElementById('btn-select-file');
+const fileNameDisplay = document.getElementById('file-name-display');
 const urlInput = document.getElementById('audio-url-input');
 const loadUrlBtn = document.getElementById('btn-load-url');
 
@@ -32,6 +33,10 @@ fileInput.addEventListener('change', (e) => {
 	currentObjectUrl = URL.createObjectURL(file);
 	audioElement.src = currentObjectUrl;
 
+	// Display the local file name in the UI
+	fileNameDisplay.textContent = file.name;
+	fileNameDisplay.title = file.name; // Shows full name on hover if truncated
+
 	console.log('Local file loaded:', file.name);
 });
 
@@ -43,5 +48,11 @@ loadUrlBtn.addEventListener('click', () => {
 	cleanupPreviousUrl();
 
 	audioElement.src = url;
+
+	// Extract filename from URL or fallback to the URL string
+	const urlFilename = url.split('/').pop().split('?')[0] || url;
+	fileNameDisplay.textContent = urlFilename;
+	fileNameDisplay.title = url;
+
 	console.log('URL source set:', url);
 });
