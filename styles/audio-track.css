@@ -29,3 +29,7 @@ input[type="range"]::-moz-range-track {
 .player-controls {
 	margin-top: 0.5rem;
 }
+
+.control-group {
+	margin-bottom: 1rem;
+}
