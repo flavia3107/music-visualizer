@@ -4,39 +4,8 @@
 @import url("styles/audio-track.css");
 @import url("styles/layout.css");
 
-.track,
-.mode-item {
+.track {
 	margin-bottom: 8px;
-	display: flex;
-	justify-content: space-between;
-}
-
-.mode-item.active {
-	border-color: var(--accent-blue);
-	background: rgba(0, 243, 255, 0.1);
-}
-
-.modes-grid {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 10px;
-	margin-bottom: 1.5rem;
-}
-
-.theme-container {
-	padding-top: 1rem;
-	border-top: 1px solid #4e4e4e;
-}
-
-.modes-grid .mode-item {
-	flex: 1 1 calc(50% - 5px);
-	box-sizing: border-box;
-}
-
-.theme-item {
-	height: 30px;
-	margin-bottom: 10px;
-	border-radius: 4px;
 }
 
 .btn-party {
