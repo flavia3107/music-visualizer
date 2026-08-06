@@ -152,7 +152,7 @@ input[type="range"]::-moz-range-track {
 
 .material-symbols-outlined.element {
 	font-size: 1rem;
-	padding: 9.5px;
+	padding: 10.5px;
 	margin-left: 0.5rem;
 }
 
@@ -207,6 +207,10 @@ input[type="range"]::-moz-range-track {
 	font-weight: bold;
 	border: none;
 	margin-top: 1rem;
+}
+
+.song-title {
+	width: 100%;
 }
 
 .playlist {

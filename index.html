@@ -24,10 +24,12 @@
 				<div class="panel">
 					<h2>Audio Source</h2>
 
-					<!-- Local File Input -->
 					<div class="control-group flex-row space-between middle">
-						<button class="btn-secondary element" id="btn-select-file"> Select File </button>
-						<span class="material-symbols-outlined element">folder</span>
+						<span id="file-name-input" class="element song-title">Select File</span>
+						<span class="material-symbols-outlined element" id="btn-select-file"
+							style="cursor: pointer; user-select: none;" title="Choose Audio File">
+							folder
+						</span>
 						<input type="file" id="audio-file-input" accept="audio/*" style="display: none;">
 					</div>
 

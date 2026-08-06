@@ -2,9 +2,8 @@ const audioElement = new Audio();
 audioElement.crossOrigin = 'anonymous';
 
 const fileInput = document.getElementById('audio-file-input');
-const selectFileBtn = document.getElementById('btn-select-file');
-const urlInput = document.getElementById('audio-url-input');
-const loadUrlBtn = document.getElementById('btn-load-url');
+const triggerIcon = document.getElementById('btn-select-file'); // Folder icon trigger
+const fileNameInput = document.getElementById('file-name-input'); // Title display input
 
 let currentObjectUrl = null;
 
@@ -15,7 +14,7 @@ function cleanupPreviousUrl() {
 	}
 }
 
-selectFileBtn.addEventListener('click', () => {
+triggerIcon.addEventListener('click', () => {
 	fileInput.click();
 });
 
@@ -27,18 +26,6 @@ fileInput.addEventListener('change', (e) => {
 
 	currentObjectUrl = URL.createObjectURL(file);
 	audioElement.src = currentObjectUrl;
-	selectFileBtn.textContent = file.name;
-	selectFileBtn.title = file.name;
-});
+	fileNameInput.textContent = file.name;
 
-loadUrlBtn.addEventListener('click', () => {
-	const url = urlInput.value.trim();
-	if (!url) return;
-
-	cleanupPreviousUrl();
-
-	audioElement.src = url;
-	const urlFilename = url.split('/').pop().split('?')[0] || url;
-	selectFileBtn.textContent = urlFilename;
-	selectFileBtn.title = url;
 });
