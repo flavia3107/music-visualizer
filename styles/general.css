@@ -1,0 +1,72 @@
+.flex-row {
+	display: flex;
+}
+
+.space-between {
+	justify-content: space-between;
+}
+
+.middle {
+	align-items: center;
+}
+
+.flex-column {
+	display: flex;
+	flex-direction: column;
+}
+
+.panel,
+footer {
+	background: #ffffff08;
+	backdrop-filter: blur(20px) brightness(1.5);
+	-webkit-backdrop-filter: blur(20px);
+	border: 1px solid var(--border-color);
+	border-radius: 12px;
+	padding: 20px;
+	box-shadow: inset 0 0px 15px 0px #ffffff26;
+}
+
+header {
+	height: 80px;
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+}
+
+h1 {
+	font-size: 1.5rem;
+	margin: 0;
+}
+
+h2 {
+	font-size: 1rem;
+	margin-top: 0;
+	letter-spacing: 1px;
+}
+
+.element {
+	background: #ffffff21;
+	border: 1px solid var(--border-color);
+	color: var(--text-primary);
+	border-radius: 6px;
+	padding: 10px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.action-btn {
+	width: 2rem;
+	height: 2rem;
+	background: transparent;
+	border: none;
+	color: #e1e1e1;
+}
+
+.btn-secondary {
+	width: 85%;
+}
+
+input:focus-visible {
+	outline: none;
+	cursor: auto;
+}
