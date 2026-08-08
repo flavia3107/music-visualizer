@@ -1,5 +1,5 @@
 const canvas = document.getElementById('waveformCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas?.getContext('2d');
 // Vibrant Neon Palettes
 const NEON_BLUE = 'rgb(0, 230, 255)';       // High-intensity Electric Cyan/Blue
 const NEON_PINK = 'rgb(255, 0, 180)';       // High-intensity Hot Neon Pink

@@ -1,10 +1,10 @@
 import { draw, adjustCanvasSize } from './components/visualizer.js';
 import { initButtons } from './components/file-upload.js';
-import { drawSinCosWaveform } from './components/waveform.js';
+// import { drawSinCosWaveform } from './components/waveform.js';
 
-// window.addEventListener('resize', adjustCanvasSize);
-// adjustCanvasSize();
+window.addEventListener('resize', adjustCanvasSize);
+adjustCanvasSize();
 
 initButtons();
-// draw();
-drawSinCosWaveform();
+draw();
+// drawSinCosWaveform();
