@@ -1,10 +1,23 @@
-import { draw, adjustCanvasSize } from './components/visualizer.js';
-import { initButtons } from './components/file-upload.js';
-// import { drawSinCosWaveform } from './components/waveform.js';
+import { VisualizerManager } from './components/visualizer-manager.js';
+import { RadialBarsVisualizer } from './components/radial-bars.js';
+import { WaveformCurveVisualizer } from './components/waveform.js';
 
-window.addEventListener('resize', adjustCanvasSize);
-adjustCanvasSize();
+const modeItems = document.querySelectorAll('.modes-grid .mode-item');
+const manager = new VisualizerManager('mainCanvas');
+const visualizers = {
+	'Radial Bars': new RadialBarsVisualizer(),
+	'Waveform Curve': new WaveformCurveVisualizer()
+};
 
-initButtons();
-draw();
-// drawSinCosWaveform();
+manager.setVisualizer(visualizers['Radial Bars']);
+manager.start();
+
+modeItems.forEach(item => {
+	item.addEventListener('click', () => {
+		const modeName = item.textContent.trim();
+		modeItems.forEach(el => el.classList.remove('active'));
+		item.classList.add('active');
+
+		if (visualizers[modeName]) manager.setVisualizer(visualizers[modeName]);
+	});
+});
