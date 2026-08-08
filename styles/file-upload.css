@@ -1,6 +1,9 @@
 .song-title {
 	width: 100%;
 	cursor: auto;
+	overflow: hidden;
+	white-space: nowrap;
+	box-sizing: border-box;
 }
 
 .material-symbols-outlined.element {
@@ -9,4 +12,23 @@
 	margin-left: 0.5rem;
 	user-select: none;
 	cursor: pointer;
+}
+
+#file-name-input {
+	display: inline-block;
+	white-space: nowrap;
+	will-change: transform;
+}
+
+#file-name-input.animate-marquee {
+	animation: marquee 15s linear infinite;
+}
+
+@keyframes marquee {
+	0% {
+		transform: translateX(0%);
+	}
+	100% {
+		transform: translateX(-50%);
+	}
 }

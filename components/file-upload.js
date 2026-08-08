@@ -23,7 +23,22 @@ function _handleUpload(e) {
 	currentObjectUrl = URL.createObjectURL(file);
 	audioElement.src = currentObjectUrl;
 	fileNameInput.textContent = file.name;
+	_checkAndStartMarquee();
 }
+
+function _checkAndStartMarquee() {
+	const container = document.querySelector('.song-title');
+	const originalText = fileNameInput.dataset.originalText || fileNameInput.textContent;
+	fileNameInput.dataset.originalText = originalText;
+	fileNameInput.textContent = originalText;
+	fileNameInput.classList.remove('animate-marquee');
+
+	if (fileNameInput.scrollWidth > container.clientWidth) {
+		fileNameInput.textContent = `${originalText} \u00A0\u00A0\u00A0\u00A0 ${originalText} \u00A0\u00A0\u00A0\u00A0`;
+		fileNameInput.classList.add('animate-marquee');
+	}
+}
+
 
 export function initButtons() {
 	triggerIcon.addEventListener('click', () => fileInput.click());
