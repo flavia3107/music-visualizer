@@ -1,121 +1,71 @@
 const canvas = document.getElementById('waveformCanvas');
 const ctx = canvas.getContext('2d');
 
-// Color constants
+// Colors matching the UI theme
 const COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';
-const COLOR_PURPLE = 'hsla(260, 90%, 55%, 1)'; // Transition color
+const COLOR_PURPLE = 'hsla(270, 95%, 60%, 1)';
 const COLOR_PINK = 'hsla(320, 100%, 55%, 1)';
 
-const COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.3)';
-const COLOR_DULL_PURPLE = 'hsla(260, 45%, 50%, 0.3)';
-const COLOR_DULL_PINK = 'hsla(320, 45%, 50%, 0.3)';
+let phase = 0;
 
-/**
- * Render Waveform Curve
- * @param {Uint8Array|Array} audioData - Frequency or time-domain data (e.g. from AnalyserNode.getByteFrequencyData)
- */
-function drawWaveformCurve(audioData) {
+export function drawWaveformCurveUI() {
 	const width = canvas.width;
 	const height = canvas.height;
 	const centerY = height / 2;
 
 	ctx.clearRect(0, 0, width, height);
 
-	// 1. Create Gradients (Blue -> Purple -> Pink)
-	const strokeGradient = ctx.createLinearGradient(0, 0, width, 0);
-	strokeGradient.addColorStop(0, COLOR_BLUE);
-	strokeGradient.addColorStop(0.5, COLOR_PURPLE);
-	strokeGradient.addColorStop(1, COLOR_PINK);
+	// Create horizontal gradient (Cyan/Blue -> Purple -> Pink)
+	const gradient = ctx.createLinearGradient(0, 0, width, 0);
+	gradient.addColorStop(0, COLOR_BLUE);
+	gradient.addColorStop(0.5, COLOR_PURPLE);
+	gradient.addColorStop(1, COLOR_PINK);
 
-	const fillGradient = ctx.createLinearGradient(0, 0, width, 0);
-	fillGradient.addColorStop(0, COLOR_DULL_BLUE);
-	fillGradient.addColorStop(0.5, COLOR_DULL_PURPLE);
-	fillGradient.addColorStop(1, COLOR_DULL_PINK);
+	phase += 0.04; // Animation speed
 
-	if (!audioData || audioData.length === 0) return;
+	// Render primary and secondary layered wave curves
+	renderSingleWave(ctx, width, centerY, phase, gradient, 1.0, 3.5);
+	renderSingleWave(ctx, width, centerY, phase + 1.2, gradient, 0.7, 2.0);
 
-	// 2. Begin Path
-	ctx.beginPath();
-	ctx.moveTo(0, centerY);
+	requestAnimationFrame(drawWaveformCurveUI);
+}
 
-	const sliceWidth = width / (audioData.length - 1);
+function renderSingleWave(ctx, width, centerY, wavePhase, strokeStyle, ampMultiplier, lineWidth) {
+	const points = 80;
+	const step = width / (points - 1);
 
-	// Smooth Bezier curve through data points
-	for (let i = 0; i < audioData.length - 1; i++) {
-		// Normalize value from 0-255 to amplitude range centered on screen
-		const v1 = (audioData[i] / 128.0) - 1.0;
-		const v2 = (audioData[i + 1] / 128.0) - 1.0;
-
-		const x1 = i * sliceWidth;
-		const y1 = centerY + (v1 * (height / 2.5));
-
-		const x2 = (i + 1) * sliceWidth;
-		const y2 = centerY + (v2 * (height / 2.5));
-
-		// Use control points to create smooth quadratic curves
-		const xc = (x1 + x2) / 2;
-		const yc = (y1 + y2) / 2;
-
-		ctx.quadraticCurveTo(x1, y1, xc, yc);
-	}
-
-	// 3. Render Area Fill Underneath
 	ctx.save();
-	ctx.lineTo(width, height);
-	ctx.lineTo(0, height);
-	ctx.closePath();
-	ctx.fillStyle = fillGradient;
-	ctx.fill();
-	ctx.restore();
-
-	// 4. Render Top Glowing Curve Line
 	ctx.beginPath();
-	ctx.moveTo(0, centerY);
-	for (let i = 0; i < audioData.length - 1; i++) {
-		const v1 = (audioData[i] / 128.0) - 1.0;
-		const v2 = (audioData[i + 1] / 128.0) - 1.0;
 
-		const x1 = i * sliceWidth;
-		const y1 = centerY + (v1 * (height / 2.5));
-		const x2 = (i + 1) * sliceWidth;
-		const y2 = centerY + (v2 * (height / 2.5));
+	for (let i = 0; i < points; i++) {
+		const x = i * step;
+		const normalizedX = i / points;
 
-		const xc = (x1 + x2) / 2;
-		const yc = (y1 + y2) / 2;
+		// Windowing envelope so the wave smoothly tapers down to 0 at left/right edges
+		const envelope = Math.sin(normalizedX * Math.PI);
 
-		ctx.quadraticCurveTo(x1, y1, xc, yc);
+		// Combined sine frequencies for fluid, double-crested curves like the preview
+		const sine1 = Math.sin(normalizedX * Math.PI * 2.5 + wavePhase);
+		const sine2 = Math.cos(normalizedX * Math.PI * 4 - wavePhase * 0.7) * 0.4;
+
+		const y = centerY + (sine1 + sine2) * 45 * ampMultiplier * envelope;
+
+		if (i === 0) {
+			ctx.moveTo(x, y);
+		} else {
+			const prevX = (i - 1) * step;
+			const xc = (prevX + x) / 2;
+			const yc = y; // Smooth interpolation point
+			ctx.quadraticCurveTo(prevX, y, xc, yc);
+		}
 	}
 
-	ctx.strokeStyle = strokeGradient;
-	ctx.lineWidth = 3;
+	ctx.strokeStyle = strokeStyle;
+	ctx.lineWidth = lineWidth;
 	ctx.shadowColor = COLOR_PURPLE;
-	ctx.shadowBlur = 12; // Gives a subtle neon glow
+	ctx.shadowBlur = 15; // Strong neon glow
+	ctx.lineCap = 'round';
 	ctx.stroke();
-}
-
-// Dummy data generator using animated sine waves
-let phase = 0;
-
-function generateDummyData(length = 64) {
-	const dummyArray = new Uint8Array(length);
-	phase += 0.05; // Controls wave animation speed
-
-	for (let i = 0; i < length; i++) {
-		// Combine multiple sine waves for a natural dynamic motion
-		const wave1 = Math.sin(i * 0.15 + phase);
-		const wave2 = Math.cos(i * 0.08 - phase * 0.5) * 0.5;
-		const normalized = (wave1 + wave2) / 1.5; // Scale to ~ -1 to 1
-
-		// Map range (-1 to 1) to Uint8 byte range (0 to 255, centered at 128)
-		dummyArray[i] = Math.floor(128 + normalized * 80);
-	}
-
-	return dummyArray;
-}
-
-export function animateDummyWaveform() {
-	const fakeAudioData = generateDummyData(64);
-	drawWaveformCurve(fakeAudioData);
-	requestAnimationFrame(animateDummyWaveform);
+	ctx.restore();
 }
 
