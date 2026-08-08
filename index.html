@@ -22,7 +22,6 @@
 			<aside class="left-panel">
 				<div class="panel">
 					<h2>Audio Source</h2>
-
 					<div class="control-group flex-row space-between middle">
 						<span class="element song-title">
 							<span id="file-name-input">Select File</span>
@@ -31,13 +30,6 @@
 							folder
 						</span>
 						<input type="file" id="audio-file-input" accept="audio/*" style="display: none;">
-					</div>
-
-					<!-- URL Input -->
-					<div class="control-group flex-row space-between middle" style="margin-top: 10px;">
-						<input type="text" id="audio-url-input" placeholder="Paste track URL..." class="element"
-							style="flex: 1; margin-right: 8px;">
-						<button class="btn-secondary element" id="btn-load-url">Load</button>
 					</div>
 				</div>
 
@@ -50,7 +42,8 @@
 			</aside>
 
 			<div class="center-spacer flex-column">
-				<canvas id="mainCanvas"></canvas>
+				<!-- <canvas id="mainCanvas"></canvas> -->
+				<canvas id="waveformCanvas"></canvas>
 				<footer class="playback-bar flex-column">
 					<div class="flex-row space-between middle progress">
 						<span class="time">02:15 / 04:32</span>

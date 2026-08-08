@@ -2,7 +2,7 @@ import { Particle } from './particle.js';
 
 // --- 1. Setup Canvas ---
 const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
+const ctx = canvas?.getContext('2d');
 const COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';
 const COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';
 const COLOR_PINK = 'hsla(320, 100%, 55%, 1)';
