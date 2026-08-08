@@ -23,13 +23,14 @@ function _handleUpload(e) {
 	currentObjectUrl = URL.createObjectURL(file);
 	audioElement.src = currentObjectUrl;
 	fileNameInput.textContent = file.name;
+	fileNameInput.dataset.originalText = file.name;
+
 	_checkAndStartMarquee();
 }
 
 function _checkAndStartMarquee() {
 	const container = document.querySelector('.song-title');
 	const originalText = fileNameInput.dataset.originalText || fileNameInput.textContent;
-	fileNameInput.dataset.originalText = originalText;
 	fileNameInput.textContent = originalText;
 	fileNameInput.classList.remove('animate-marquee');
 
