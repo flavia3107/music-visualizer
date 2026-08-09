@@ -34,8 +34,8 @@ export class RadialBarsVisualizer {
 	}
 
 	/**
-	 * Maps audio spectrum symmetrically across the vertical Y-axis.
-	 * Guarantees left (blue) and right (yellow) sides mirror each other perfectly.
+	 * Maps audio spectrum across the arc while scaling down heavy bass peaks
+	 * at vertical poles to keep pink, blue, and yellow regions balanced.
 	 */
 	_processAudioData(inputData, targetLength) {
 		if (!inputData || inputData.length === 0) {
@@ -48,15 +48,17 @@ export class RadialBarsVisualizer {
 		for (let i = 0; i < targetLength; i++) {
 			const angle = (i / targetLength) * Math.PI * 2;
 
-			// Normalized distance from vertical center (0.0 at top/bottom, 1.0 at outer sides)
-			const u = Math.abs(Math.cos(angle));
+			// Normalized position along the semicircle (0.0 = top/bottom poles, 1.0 = left/right sides)
+			const u = Math.abs(Math.sin(angle));
 
-			// Map frequencies outwards from vertical center
-			const fftIdx = Math.floor(Math.pow(u, 1.2) * (inputLen * 0.50));
+			// Map frequencies: low frequencies towards sides, mid/high frequencies towards top/bottom
+			const fftIdx = Math.floor(Math.pow(u, 1.1) * (inputLen * 0.45));
 			let rawVal = (inputData[fftIdx] || 0) / 255;
 
-			// Apply equal dynamic scaling to both sides
-			const contrastVal = Math.pow(rawVal, 2.2) * 1.6;
+			// Scale down peak response for vertical pink region (|cos| near 0)
+			const verticalFactor = 0.65 + 0.35 * u;
+			const contrastVal = Math.pow(rawVal, 2.0) * 1.4 * verticalFactor;
+
 			rawBands[i] = Math.min(1.0, contrastVal);
 		}
 
@@ -69,7 +71,7 @@ export class RadialBarsVisualizer {
 			spatialBands[i] = (prev * 0.25) + (curr * 0.50) + (next * 0.25);
 		}
 
-		// Fast attack, smooth decay
+		// Temporal decay tracking
 		const output = new Uint8Array(targetLength);
 		for (let i = 0; i < targetLength; i++) {
 			const targetVal = spatialBands[i];
