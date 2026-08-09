@@ -1,6 +1,7 @@
 import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
+import { initButtons } from './components/file-upload.js';
 
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
 const manager = new VisualizerManager('mainCanvas');
@@ -21,6 +22,9 @@ modeItems.forEach(item => {
 		if (visualizers[modeName]) manager.setVisualizer(visualizers[modeName]);
 	});
 });
+
+initButtons()
+
 
 
 /* ==========================================================================
