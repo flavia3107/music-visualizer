@@ -7,6 +7,27 @@ const fileNameInput = document.getElementById('file-name-input');
 
 let currentObjectUrl = null;
 
+// --- Web Audio API Initialization ---
+let audioCtx = null;
+let analyser = null;
+let sourceNode = null;
+
+function initAudioContext() {
+	if (audioCtx) return;
+
+	// 1. Create AudioContext
+	audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+	// 2. Create AnalyserNode for your visualizer
+	analyser = audioCtx.createAnalyser();
+	analyser.fftSize = 256; // Adjust frequency resolution (e.g., 64, 128, 256, 512)
+
+	// 3. Connect audioElement -> analyser -> speakers
+	sourceNode = audioCtx.createMediaElementSource(audioElement);
+	sourceNode.connect(analyser);
+	analyser.connect(audioCtx.destination);
+}
+
 function cleanupPreviousUrl() {
 	if (currentObjectUrl) {
 		URL.revokeObjectURL(currentObjectUrl);
@@ -26,6 +47,14 @@ function _handleUpload(e) {
 	fileNameInput.dataset.originalText = file.name;
 
 	_checkAndStartMarquee();
+
+	// Setup Web Audio nodes on first upload
+	initAudioContext();
+
+	// Resume AudioContext if suspended by browser autoplay policy
+	if (audioCtx && audioCtx.state === 'suspended') {
+		audioCtx.resume();
+	}
 }
 
 function _checkAndStartMarquee() {
@@ -40,8 +69,21 @@ function _checkAndStartMarquee() {
 	}
 }
 
-
 export function initButtons() {
 	triggerIcon.addEventListener('click', () => fileInput.click());
 	fileInput.addEventListener('change', (e) => _handleUpload(e));
+}
+
+// --- Visualizer Export ---
+// Call this function inside your render/animation loop (e.g. requestAnimationFrame)
+export function getAudioData() {
+	if (!analyser) return new Uint8Array(0);
+
+	const bufferLength = analyser.frequencyBinCount;
+	const dataArray = new Uint8Array(bufferLength);
+
+	// Retrieves frequency spectrum data (0 - 255)
+	analyser.getByteFrequencyData(dataArray);
+
+	return dataArray;
 }

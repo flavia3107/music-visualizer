@@ -38,6 +38,23 @@ export class RadialBarsVisualizer {
 		return smoothed;
 	}
 
+	// Normalizes audio input: samples FFT frequency data down to config.barCount
+	_processAudioData(inputData, targetLength) {
+		if (!inputData || inputData.length === 0) {
+			return this._getSimulatedAudioData(targetLength);
+		}
+
+		const processed = new Uint8Array(targetLength);
+		const step = inputData.length / targetLength;
+
+		for (let i = 0; i < targetLength; i++) {
+			const sampleIdx = Math.floor(i * step);
+			processed[i] = inputData[sampleIdx] || 0;
+		}
+
+		return processed;
+	}
+
 	_getRingGradient(ctx, ringNumber, radius) {
 		const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
 		switch (ringNumber) {
@@ -105,33 +122,38 @@ export class RadialBarsVisualizer {
 		return cosVal < 0 ? this.COLOR_BLUE : this.COLOR_YELLOW;
 	}
 
-	draw(ctx, rect, metrics) {
-		ctx.clearRect(0, 0, rect.width, rect.height);
+	// Signature matches VisualizerManager: draw(ctx, audioData, metrics)
+	draw(ctx, rawAudioData, metrics) {
+		ctx.clearRect(0, 0, metrics.width, metrics.height);
 
-		const audioData = this._getSimulatedAudioData(this.config.barCount);
-		const intensity = audioData[0] / 255;
-		const minDimension = Math.min(rect.width, rect.height);
+		// Process actual FFT audio array or fall back to simulated wave
+		const audioData = this._processAudioData(rawAudioData, this.config.barCount);
+
+		// Use average of bass frequencies for pulse reactivity
+		const bassIntensity = (audioData[0] + audioData[1] + audioData[2]) / (3 * 255);
+		const minDimension = Math.min(metrics.width, metrics.height);
 		const maxOuterRadius = minDimension * 0.44;
 		const ring8Factor = this.RING_SPACING_FACTORS[this.RING_SPACING_FACTORS.length - 1];
 		const baseInnerRadius = maxOuterRadius * 0.72;
-		const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.97 + intensity * 0.05);
+		const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.97 + bassIntensity * 0.05);
 		const dynamicMaxBarHeight = maxOuterRadius * 0.35;
 		const dynamicMinBarHeight = this.config.minBarHeight;
 
 		ctx.save();
 		ctx.translate(metrics.centerX, metrics.centerY);
 
+		// Draw Rings
 		this.RING_SPACING_FACTORS.forEach((factor, index) => {
 			const ringNumber = index + 1;
 			const baseRadius = baseInnerRadius * factor;
-			const currentRadius = baseRadius * (0.97 + intensity * 0.05);
+			const currentRadius = baseRadius * (0.97 + bassIntensity * 0.05);
 
 			ctx.strokeStyle = this._getRingGradient(ctx, ringNumber, currentRadius);
 			ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5;
 
 			if ([1, 3, 5, 8].includes(ringNumber)) {
 				ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-				ctx.shadowBlur = 8 + (intensity * 10);
+				ctx.shadowBlur = 8 + (bassIntensity * 10);
 				ctx.beginPath();
 				ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 				ctx.stroke();
@@ -148,7 +170,7 @@ export class RadialBarsVisualizer {
 				ctx.clip();
 
 				ctx.shadowColor = this.COLOR_BLUE;
-				ctx.shadowBlur = 8 + (intensity * 10);
+				ctx.shadowBlur = 8 + (bassIntensity * 10);
 				ctx.beginPath();
 				ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 				ctx.stroke();
@@ -162,6 +184,7 @@ export class RadialBarsVisualizer {
 			}
 		});
 
+		// Draw Radial Audio Bars
 		const circum = dynamicRing8Radius * Math.PI * 2;
 		const barWidth = Math.max(1.8, (circum / this.config.barCount) * 0.55);
 
@@ -188,11 +211,13 @@ export class RadialBarsVisualizer {
 			ctx.lineTo(endX, endY);
 			ctx.stroke();
 
-			if (value > 60 && Math.random() < 0.25) {
+			// Spawn Particles on Peaks
+			if (value > 120 && Math.random() < 0.2) {
 				this.particles.push(new Particle(endX, endY, angle, color));
 			}
 		}
 
+		// Render Particle Physics
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
 			p.update();
