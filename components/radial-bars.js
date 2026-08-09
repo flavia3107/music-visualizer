@@ -2,7 +2,11 @@ import { Particle } from './particle.js';
 
 export class RadialBarsVisualizer {
 	constructor() {
-		this.config = { barCount: 160, minBarHeight: 3 };
+		this.config = {
+			barCount: 160,
+			minBarHeight: 2, // Default height for static/fallback bars
+			minRenderHeight: 5 // Minimum height (px) required to draw a bar during playback
+		};
 		this.RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 		this.particles = [];
 		this.simRotation = 0;
@@ -21,22 +25,13 @@ export class RadialBarsVisualizer {
 
 	_getSimulatedAudioData(bufferLength) {
 		const raw = new Uint8Array(bufferLength);
+		// Output 0 so processed values stay at the minimum bar height (2px)
 		for (let i = 0; i < bufferLength; i++) {
-			const norm = i / bufferLength;
-			const kickBeat = Math.pow(Math.max(0, Math.sin(this.simRotation * 5)), 6) * 160;
-			const wave1 = Math.sin(norm * Math.PI * 6 + this.simRotation * 3) * 60;
-			const wave2 = Math.cos(norm * Math.PI * 3 - this.simRotation * 2) * 40;
-			const val = Math.max(0, wave1 + wave2 + kickBeat + (Math.random() * 12));
-			raw[i] = Math.min(255, val);
+			raw[i] = 0;
 		}
-		this.simRotation += 0.025;
 		return raw;
 	}
 
-	/**
-	 * Maps audio spectrum across the arc while scaling down heavy bass peaks
-	 * at vertical poles to keep pink, blue, and yellow regions balanced.
-	 */
 	_processAudioData(inputData, targetLength) {
 		if (!inputData || inputData.length === 0) {
 			return this._getSimulatedAudioData(targetLength);
@@ -47,15 +42,11 @@ export class RadialBarsVisualizer {
 
 		for (let i = 0; i < targetLength; i++) {
 			const angle = (i / targetLength) * Math.PI * 2;
-
-			// Normalized position along the semicircle (0.0 = top/bottom poles, 1.0 = left/right sides)
 			const u = Math.abs(Math.sin(angle));
 
-			// Map frequencies: low frequencies towards sides, mid/high frequencies towards top/bottom
 			const fftIdx = Math.floor(Math.pow(u, 1.1) * (inputLen * 0.45));
 			let rawVal = (inputData[fftIdx] || 0) / 255;
 
-			// Scale down peak response for vertical pink region (|cos| near 0)
 			const verticalFactor = 0.65 + 0.35 * u;
 			const contrastVal = Math.pow(rawVal, 2.0) * 1.4 * verticalFactor;
 
@@ -158,6 +149,7 @@ export class RadialBarsVisualizer {
 	draw(ctx, rawAudioData, metrics) {
 		ctx.clearRect(0, 0, metrics.width, metrics.height);
 
+		const isAudioActive = rawAudioData && rawAudioData.length > 0;
 		const audioData = this._processAudioData(rawAudioData, this.config.barCount);
 
 		let bassSum = 0;
@@ -224,11 +216,17 @@ export class RadialBarsVisualizer {
 
 		for (let i = 0; i < this.config.barCount; i++) {
 			const value = audioData[i];
+			const normVal = value / 255;
+			const barHeight = dynamicMinBarHeight + normVal * dynamicMaxBarHeight;
+
+			// When audio is playing, filter out bars below 5px height
+			if (isAudioActive && barHeight < this.config.minRenderHeight) {
+				continue;
+			}
+
 			const progress = i / this.config.barCount;
 			const angle = progress * Math.PI * 2;
-			const normVal = value / 255;
 
-			const barHeight = dynamicMinBarHeight + normVal * dynamicMaxBarHeight;
 			const startX = Math.cos(angle) * dynamicRing8Radius;
 			const startY = Math.sin(angle) * dynamicRing8Radius;
 			const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
@@ -236,18 +234,20 @@ export class RadialBarsVisualizer {
 
 			const color = this._getPureBarColor(angle);
 
+			ctx.save();
 			ctx.strokeStyle = color;
 			ctx.shadowColor = color;
-			ctx.shadowBlur = 2 + (normVal * 8);
+			ctx.shadowBlur = 6;
 			ctx.lineWidth = barWidth;
 			ctx.lineCap = 'round';
 			ctx.beginPath();
 			ctx.moveTo(startX, startY);
 			ctx.lineTo(endX, endY);
 			ctx.stroke();
+			ctx.restore();
 
 			// Burst particles on sharp beat hits
-			if (normVal > 0.58 && Math.random() < 0.30) {
+			if (isAudioActive && normVal > 0.58 && Math.random() < 0.30) {
 				this.particles.push(new Particle(endX, endY, angle, color));
 			}
 		}
