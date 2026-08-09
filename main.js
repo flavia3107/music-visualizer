@@ -1,10 +1,10 @@
 import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
-import { initButtons } from './components/file-upload.js';
+import { initButtons, getAudioData } from './components/file-upload.js'; // 1. Import getAudioData
 
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
-const manager = new VisualizerManager('mainCanvas');
+const manager = new VisualizerManager('mainCanvas', getAudioData);
 const visualizers = {
 	'Radial Bars': new RadialBarsVisualizer(),
 	// 'Waveform Curve': new WaveformCurveVisualizer()
@@ -23,7 +23,7 @@ modeItems.forEach(item => {
 	});
 });
 
-initButtons()
+initButtons();
 
 
 

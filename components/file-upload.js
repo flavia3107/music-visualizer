@@ -6,8 +6,6 @@ const triggerIcon = document.getElementById('btn-select-file');
 const fileNameInput = document.getElementById('file-name-input');
 
 let currentObjectUrl = null;
-
-// --- Web Audio API Initialization ---
 let audioCtx = null;
 let analyser = null;
 let sourceNode = null;
@@ -74,16 +72,10 @@ export function initButtons() {
 	fileInput.addEventListener('change', (e) => _handleUpload(e));
 }
 
-// --- Visualizer Export ---
-// Call this function inside your render/animation loop (e.g. requestAnimationFrame)
 export function getAudioData() {
 	if (!analyser) return new Uint8Array(0);
 
-	const bufferLength = analyser.frequencyBinCount;
-	const dataArray = new Uint8Array(bufferLength);
-
-	// Retrieves frequency spectrum data (0 - 255)
+	const dataArray = new Uint8Array(analyser.frequencyBinCount);
 	analyser.getByteFrequencyData(dataArray);
-
 	return dataArray;
 }
