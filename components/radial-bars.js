@@ -2,13 +2,15 @@ import { Particle } from './particle.js';
 
 export class RadialBarsVisualizer {
 	constructor() {
-		// Enforce a minimum bar height so every bar is rendered continuously around the circle
-		this.config = { barCount: 160, minBarHeight: 6 };
+		this.config = { barCount: 160, minBarHeight: 3 };
 		this.RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 		this.particles = [];
 		this.simRotation = 0;
 
-		// Color Constants (Preserved exactly as provided)
+		// Dynamic height tracker for smooth transitions
+		this.smoothedHeights = new Float32Array(this.config.barCount);
+
+		// Color Constants
 		this.COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';
 		this.COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';
 		this.COLOR_PINK = 'hsla(320, 100%, 55%, 1)';
@@ -21,39 +23,67 @@ export class RadialBarsVisualizer {
 		const raw = new Uint8Array(bufferLength);
 		for (let i = 0; i < bufferLength; i++) {
 			const norm = i / bufferLength;
-			const wave1 = Math.sin(norm * Math.PI * 4 + this.simRotation * 2) * 50;
-			const wave2 = Math.cos(norm * Math.PI * 2 - this.simRotation * 1.5) * 40;
-			const peak = Math.exp(-Math.pow((norm - 0.25) * 6, 2)) * 120;
-			const val = Math.max(0, wave1 + wave2 + peak + (Math.random() * 8));
+			const kickBeat = Math.pow(Math.max(0, Math.sin(this.simRotation * 5)), 6) * 160;
+			const wave1 = Math.sin(norm * Math.PI * 6 + this.simRotation * 3) * 60;
+			const wave2 = Math.cos(norm * Math.PI * 3 - this.simRotation * 2) * 40;
+			const val = Math.max(0, wave1 + wave2 + kickBeat + (Math.random() * 12));
 			raw[i] = Math.min(255, val);
 		}
-		this.simRotation += 0.012;
-
-		const smoothed = new Uint8Array(bufferLength);
-		for (let i = 0; i < bufferLength; i++) {
-			const prev = raw[(i - 1 + bufferLength) % bufferLength];
-			const curr = raw[i];
-			const next = raw[(i + 1) % bufferLength];
-			smoothed[i] = (prev * 0.25) + (curr * 0.5) + (next * 0.25);
-		}
-		return smoothed;
+		this.simRotation += 0.025;
+		return raw;
 	}
 
-	// Normalizes audio input: samples FFT frequency data down to config.barCount (No mirroring)
+	/**
+	 * Maps audio spectrum symmetrically across the vertical Y-axis.
+	 * Guarantees left (blue) and right (yellow) sides mirror each other perfectly.
+	 */
 	_processAudioData(inputData, targetLength) {
 		if (!inputData || inputData.length === 0) {
 			return this._getSimulatedAudioData(targetLength);
 		}
 
-		const processed = new Uint8Array(targetLength);
-		const step = inputData.length / targetLength;
+		const rawBands = new Float32Array(targetLength);
+		const inputLen = inputData.length;
 
 		for (let i = 0; i < targetLength; i++) {
-			const sampleIdx = Math.floor(i * step);
-			processed[i] = inputData[sampleIdx] || 0;
+			const angle = (i / targetLength) * Math.PI * 2;
+
+			// Normalized distance from vertical center (0.0 at top/bottom, 1.0 at outer sides)
+			const u = Math.abs(Math.cos(angle));
+
+			// Map frequencies outwards from vertical center
+			const fftIdx = Math.floor(Math.pow(u, 1.2) * (inputLen * 0.50));
+			let rawVal = (inputData[fftIdx] || 0) / 255;
+
+			// Apply equal dynamic scaling to both sides
+			const contrastVal = Math.pow(rawVal, 2.2) * 1.6;
+			rawBands[i] = Math.min(1.0, contrastVal);
 		}
 
-		return processed;
+		// 3-tap spatial smoothing
+		const spatialBands = new Float32Array(targetLength);
+		for (let i = 0; i < targetLength; i++) {
+			const prev = rawBands[(i - 1 + targetLength) % targetLength];
+			const curr = rawBands[i];
+			const next = rawBands[(i + 1) % targetLength];
+			spatialBands[i] = (prev * 0.25) + (curr * 0.50) + (next * 0.25);
+		}
+
+		// Fast attack, smooth decay
+		const output = new Uint8Array(targetLength);
+		for (let i = 0; i < targetLength; i++) {
+			const targetVal = spatialBands[i];
+			const currentVal = this.smoothedHeights[i];
+
+			if (targetVal > currentVal) {
+				this.smoothedHeights[i] = currentVal + (targetVal - currentVal) * 0.85;
+			} else {
+				this.smoothedHeights[i] = currentVal - (currentVal - targetVal) * 0.28;
+			}
+			output[i] = Math.floor(this.smoothedHeights[i] * 255);
+		}
+
+		return output;
 	}
 
 	_getRingGradient(ctx, ringNumber, radius) {
@@ -123,20 +153,21 @@ export class RadialBarsVisualizer {
 		return cosVal < 0 ? this.COLOR_BLUE : this.COLOR_YELLOW;
 	}
 
-	// Signature matches VisualizerManager: draw(ctx, audioData, metrics)
 	draw(ctx, rawAudioData, metrics) {
 		ctx.clearRect(0, 0, metrics.width, metrics.height);
 
-		// Process actual FFT audio array or fall back to simulated wave
 		const audioData = this._processAudioData(rawAudioData, this.config.barCount);
 
-		// Use average of bass frequencies for pulse reactivity
-		const bassIntensity = (audioData[0] + audioData[1] + audioData[2]) / (3 * 255);
+		let bassSum = 0;
+		for (let i = 0; i < 12; i++) bassSum += audioData[i];
+		const bassIntensity = bassSum / (12 * 255);
+
 		const minDimension = Math.min(metrics.width, metrics.height);
 		const maxOuterRadius = minDimension * 0.44;
 		const ring8Factor = this.RING_SPACING_FACTORS[this.RING_SPACING_FACTORS.length - 1];
 		const baseInnerRadius = maxOuterRadius * 0.72;
-		const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.97 + bassIntensity * 0.05);
+		const dynamicRing8Radius = baseInnerRadius * ring8Factor * (0.96 + bassIntensity * 0.08);
+
 		const dynamicMaxBarHeight = maxOuterRadius * 0.35;
 		const dynamicMinBarHeight = this.config.minBarHeight;
 
@@ -147,14 +178,14 @@ export class RadialBarsVisualizer {
 		this.RING_SPACING_FACTORS.forEach((factor, index) => {
 			const ringNumber = index + 1;
 			const baseRadius = baseInnerRadius * factor;
-			const currentRadius = baseRadius * (0.97 + bassIntensity * 0.05);
+			const currentRadius = baseRadius * (0.96 + bassIntensity * 0.08);
 
 			ctx.strokeStyle = this._getRingGradient(ctx, ringNumber, currentRadius);
 			ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5;
 
 			if ([1, 3, 5, 8].includes(ringNumber)) {
 				ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
-				ctx.shadowBlur = 8 + (bassIntensity * 10);
+				ctx.shadowBlur = 6 + (bassIntensity * 12);
 				ctx.beginPath();
 				ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 				ctx.stroke();
@@ -171,7 +202,7 @@ export class RadialBarsVisualizer {
 				ctx.clip();
 
 				ctx.shadowColor = this.COLOR_BLUE;
-				ctx.shadowBlur = 8 + (bassIntensity * 10);
+				ctx.shadowBlur = 6 + (bassIntensity * 12);
 				ctx.beginPath();
 				ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
 				ctx.stroke();
@@ -185,27 +216,27 @@ export class RadialBarsVisualizer {
 			}
 		});
 
-		// Draw Radial Audio Bars (Draws all 160 bars continuously)
+		// Draw Radial Bars
 		const circum = dynamicRing8Radius * Math.PI * 2;
 		const barWidth = Math.max(1.8, (circum / this.config.barCount) * 0.55);
 
 		for (let i = 0; i < this.config.barCount; i++) {
 			const value = audioData[i];
-
 			const progress = i / this.config.barCount;
 			const angle = progress * Math.PI * 2;
-			const barHeight = dynamicMinBarHeight + (value / 255) * dynamicMaxBarHeight;
+			const normVal = value / 255;
+
+			const barHeight = dynamicMinBarHeight + normVal * dynamicMaxBarHeight;
 			const startX = Math.cos(angle) * dynamicRing8Radius;
 			const startY = Math.sin(angle) * dynamicRing8Radius;
 			const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
 			const endY = Math.sin(angle) * (dynamicRing8Radius + barHeight);
 
-			// Retains spatial position-based coloring
 			const color = this._getPureBarColor(angle);
 
 			ctx.strokeStyle = color;
 			ctx.shadowColor = color;
-			ctx.shadowBlur = 4 + ((value / 255) * 6);
+			ctx.shadowBlur = 2 + (normVal * 8);
 			ctx.lineWidth = barWidth;
 			ctx.lineCap = 'round';
 			ctx.beginPath();
@@ -213,8 +244,8 @@ export class RadialBarsVisualizer {
 			ctx.lineTo(endX, endY);
 			ctx.stroke();
 
-			// Spawn Particles on Peaks
-			if (value > 120 && Math.random() < 0.2) {
+			// Burst particles on sharp beat hits
+			if (normVal > 0.58 && Math.random() < 0.30) {
 				this.particles.push(new Particle(endX, endY, angle, color));
 			}
 		}
