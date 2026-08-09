@@ -13,14 +13,9 @@ let sourceNode = null;
 function initAudioContext() {
 	if (audioCtx) return;
 
-	// 1. Create AudioContext
 	audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-	// 2. Create AnalyserNode for your visualizer
 	analyser = audioCtx.createAnalyser();
-	analyser.fftSize = 256; // Adjust frequency resolution (e.g., 64, 128, 256, 512)
-
-	// 3. Connect audioElement -> analyser -> speakers
+	analyser.fftSize = 256;
 	sourceNode = audioCtx.createMediaElementSource(audioElement);
 	sourceNode.connect(analyser);
 	analyser.connect(audioCtx.destination);
@@ -33,7 +28,7 @@ function cleanupPreviousUrl() {
 	}
 }
 
-function _handleUpload(e) {
+async function _handleUpload(e) {
 	const file = e.target.files[0];
 	if (!file) return;
 
@@ -45,13 +40,14 @@ function _handleUpload(e) {
 	fileNameInput.dataset.originalText = file.name;
 
 	_checkAndStartMarquee();
-
-	// Setup Web Audio nodes on first upload
 	initAudioContext();
 
-	// Resume AudioContext if suspended by browser autoplay policy
-	if (audioCtx && audioCtx.state === 'suspended') {
-		audioCtx.resume();
+	if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+
+	try {
+		await audioElement.play();
+	} catch (err) {
+		console.warn("Autoplay blocked or playback interrupted:", err);
 	}
 }
 
@@ -79,3 +75,5 @@ export function getAudioData() {
 	analyser.getByteFrequencyData(dataArray);
 	return dataArray;
 }
+
+export { audioElement };
