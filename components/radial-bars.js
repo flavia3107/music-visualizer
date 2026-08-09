@@ -2,12 +2,13 @@ import { Particle } from './particle.js';
 
 export class RadialBarsVisualizer {
 	constructor() {
-		this.config = { barCount: 160, minBarHeight: 0 };
+		// Enforce a minimum bar height so every bar is rendered continuously around the circle
+		this.config = { barCount: 160, minBarHeight: 6 };
 		this.RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 		this.particles = [];
 		this.simRotation = 0;
 
-		// Color Constants
+		// Color Constants (Preserved exactly as provided)
 		this.COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';
 		this.COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';
 		this.COLOR_PINK = 'hsla(320, 100%, 55%, 1)';
@@ -38,7 +39,7 @@ export class RadialBarsVisualizer {
 		return smoothed;
 	}
 
-	// Normalizes audio input: samples FFT frequency data down to config.barCount
+	// Normalizes audio input: samples FFT frequency data down to config.barCount (No mirroring)
 	_processAudioData(inputData, targetLength) {
 		if (!inputData || inputData.length === 0) {
 			return this._getSimulatedAudioData(targetLength);
@@ -184,13 +185,12 @@ export class RadialBarsVisualizer {
 			}
 		});
 
-		// Draw Radial Audio Bars
+		// Draw Radial Audio Bars (Draws all 160 bars continuously)
 		const circum = dynamicRing8Radius * Math.PI * 2;
 		const barWidth = Math.max(1.8, (circum / this.config.barCount) * 0.55);
 
 		for (let i = 0; i < this.config.barCount; i++) {
 			const value = audioData[i];
-			if (value < 2) continue;
 
 			const progress = i / this.config.barCount;
 			const angle = progress * Math.PI * 2;
@@ -199,6 +199,8 @@ export class RadialBarsVisualizer {
 			const startY = Math.sin(angle) * dynamicRing8Radius;
 			const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
 			const endY = Math.sin(angle) * (dynamicRing8Radius + barHeight);
+
+			// Retains spatial position-based coloring
 			const color = this._getPureBarColor(angle);
 
 			ctx.strokeStyle = color;
