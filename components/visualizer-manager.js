@@ -5,7 +5,7 @@ export class VisualizerManager {
 
 		this.currentVisualizer = null;
 		this.animationFrameId = null;
-		this.audioDataProvider = audioDataProvider; // Callback returning Uint8Array
+		this.audioDataProvider = audioDataProvider;
 
 		this.width = 0;
 		this.height = 0;
@@ -31,15 +31,11 @@ export class VisualizerManager {
 
 		this.canvas.style.width = `${rect.width}px`;
 		this.canvas.style.height = `${rect.height}px`;
-
-		// Setting canvas.width/height resets the context scale, so re-apply ctx.scale
 		this.width = rect.width;
 		this.height = rect.height;
 		this.canvas.width = rect.width * dpr;
 		this.canvas.height = rect.height * dpr;
-
 		this.ctx.scale(dpr, dpr);
-
 		this.centerX = rect.width / 2;
 		this.centerY = rect.height / 2;
 	}
@@ -51,9 +47,7 @@ export class VisualizerManager {
 	}
 
 	start() {
-		if (!this.animationFrameId) {
-			this._loop();
-		}
+		if (!this.animationFrameId) this._loop()
 	}
 
 	stop() {
@@ -67,9 +61,7 @@ export class VisualizerManager {
 		this.animationFrameId = requestAnimationFrame(() => this._loop());
 
 		if (this.currentVisualizer && typeof this.currentVisualizer.draw === 'function') {
-			// Retrieve fresh frequency data on every animation frame
 			const audioData = this.audioDataProvider ? this.audioDataProvider() : new Uint8Array(0);
-
 			this.currentVisualizer.draw(this.ctx, audioData, {
 				width: this.width,
 				height: this.height,

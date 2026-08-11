@@ -1,9 +1,3 @@
-/**
- * Initializes audio player controls using event delegation.
- * @param {HTMLAudioElement} audio - The audio DOM element to control.
- * @param {string|HTMLElement} [controlsContainer='.player-controls'] - Selector string or HTML element containing the control buttons.
- * @returns {Object} An object containing player state and cleanup handlers.
- */
 export function initPlayerControls(audio, controlsContainer = '.player-controls') {
 	const container = typeof controlsContainer === 'string'
 		? document.querySelector(controlsContainer)
@@ -16,7 +10,6 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 	let isShuffle = false;
 
-	// Delegate click handling across all player buttons
 	const handleClick = (e) => {
 		const btn = e.target.closest('.action-btn');
 		if (!btn) return;
@@ -29,24 +22,17 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		switch (action) {
 			case 'pause':
 			case 'play_arrow':
-				if (window.audioCtx && window.audioCtx.state === 'suspended') {
-					window.audioCtx.resume();
-				}
+				if (window.audioCtx && window.audioCtx.state === 'suspended') window.audioCtx.resume();
 
-				if (audio.paused) {
-					audio.play();
-				} else {
-					audio.pause();
-				}
+				if (audio.paused) audio.play();
+				else audio.pause();
 				break;
 
 			case 'fast_rewind':
-				// Seek backward 5 seconds
 				audio.currentTime = Math.max(0, audio.currentTime - 5);
 				break;
 
 			case 'fast_forward':
-				// Seek forward 5 seconds
 				audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
 				break;
 
@@ -56,14 +42,12 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 				break;
 
 			case 'repeat':
-				// Native HTMLMediaElement loop state toggle
 				audio.loop = !audio.loop;
 				btn.classList.toggle('active', audio.loop);
 				break;
 		}
 	};
 
-	// Synchronize button icon with actual audio playing state
 	const handleStateChange = () => {
 		const playBtn = Array.from(container.querySelectorAll('.action-btn')).find((btn) => {
 			const text = btn.querySelector('.material-symbols-outlined')?.textContent.trim();
@@ -76,15 +60,11 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		}
 	};
 
-	// Bind event listeners
 	container.addEventListener('click', handleClick);
 	audio.addEventListener('play', handleStateChange);
 	audio.addEventListener('pause', handleStateChange);
-
-	// Initial state check
 	handleStateChange();
 
-	// Return state inspection and cleanup method
 	return {
 		isShuffle: () => isShuffle,
 		destroy: () => {
