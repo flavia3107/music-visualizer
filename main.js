@@ -2,7 +2,10 @@ import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
 import { initButtons, getAudioData } from './components/file-upload.js'; // 1. Import getAudioData
+import { initPlayerControls } from './components/audio-control.js';
 
+const audioElement = document.getElementById('audio-player');
+const playerController = initPlayerControls(audioElement, '.player-controls');
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
 const manager = new VisualizerManager('mainCanvas', getAudioData);
 const visualizers = {
