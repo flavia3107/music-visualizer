@@ -29,6 +29,10 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		switch (action) {
 			case 'pause':
 			case 'play_arrow':
+				if (window.audioCtx && window.audioCtx.state === 'suspended') {
+					window.audioCtx.resume();
+				}
+
 				if (audio.paused) {
 					audio.play();
 				} else {
