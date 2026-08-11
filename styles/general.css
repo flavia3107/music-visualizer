@@ -84,3 +84,7 @@ input:focus-visible {
 	border: none;
 	margin-top: 1rem;
 }
+
+.scrubber {
+	cursor: grab;
+}
