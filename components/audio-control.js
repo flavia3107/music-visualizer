@@ -8,7 +8,56 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		return;
 	}
 
+	// Find progress element related to this controls section
+	const progressContainer = container.previousElementSibling?.classList.contains('progress')
+		? container.previousElementSibling
+		: document.querySelector('.progress');
+
+	const scrubber = progressContainer?.querySelector('.scrubber');
+	const timeSpans = progressContainer?.querySelectorAll('.time');
+	const currentTimeSpan = timeSpans?.[0];
+	const durationTimeSpan = timeSpans?.[1];
+
 	let isShuffle = false;
+	let isSeeking = false;
+
+	// Helper to convert seconds into MM:SS format
+	const formatTime = (seconds) => {
+		if (isNaN(seconds) || seconds === Infinity) return '00:00';
+		const mins = Math.floor(seconds / 60);
+		const secs = Math.floor(seconds % 60);
+		return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+	};
+
+	// Update scrubber position and time labels
+	const updateProgress = () => {
+		const current = audio.currentTime || 0;
+		const duration = audio.duration || 0;
+
+		if (currentTimeSpan) {
+			currentTimeSpan.textContent = formatTime(current);
+		}
+		if (durationTimeSpan) {
+			durationTimeSpan.textContent = formatTime(duration);
+		}
+		if (scrubber && !isSeeking) {
+			scrubber.max = duration || 100;
+			scrubber.value = current;
+		}
+	};
+
+	// Handle scrubber interactions
+	const handleScrubberInput = () => {
+		isSeeking = true;
+		if (currentTimeSpan) {
+			currentTimeSpan.textContent = formatTime(scrubber.value);
+		}
+	};
+
+	const handleScrubberChange = () => {
+		audio.currentTime = parseFloat(scrubber.value);
+		isSeeking = false;
+	};
 
 	const handleClick = (e) => {
 		const btn = e.target.closest('.action-btn');
@@ -60,10 +109,21 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		}
 	};
 
+	// Event Listeners
 	container.addEventListener('click', handleClick);
 	audio.addEventListener('play', handleStateChange);
 	audio.addEventListener('pause', handleStateChange);
+	audio.addEventListener('timeupdate', updateProgress);
+	audio.addEventListener('loadedmetadata', updateProgress);
+
+	if (scrubber) {
+		scrubber.addEventListener('input', handleScrubberInput);
+		scrubber.addEventListener('change', handleScrubberChange);
+	}
+
+	// Initial sync
 	handleStateChange();
+	updateProgress();
 
 	return {
 		isShuffle: () => isShuffle,
@@ -71,6 +131,13 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 			container.removeEventListener('click', handleClick);
 			audio.removeEventListener('play', handleStateChange);
 			audio.removeEventListener('pause', handleStateChange);
+			audio.removeEventListener('timeupdate', updateProgress);
+			audio.removeEventListener('loadedmetadata', updateProgress);
+
+			if (scrubber) {
+				scrubber.removeEventListener('input', handleScrubberInput);
+				scrubber.removeEventListener('change', handleScrubberChange);
+			}
 		}
 	};
 }
