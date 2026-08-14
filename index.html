@@ -50,32 +50,38 @@
 						<span class="time">00:00</span>
 					</div>
 
-					<div class="player-controls">
-						<button class="action-btn">
-							<span class="material-symbols-outlined">shuffle</span>
-						</button>
-						<button class="action-btn">
-							<span class="material-symbols-outlined">fast_rewind</span>
-						</button>
-						<button class="action-btn">
-							<span class="material-symbols-outlined">pause</span>
-						</button>
-						<button class="action-btn">
-							<span class="material-symbols-outlined">fast_forward</span>
-						</button>
-						<button class="action-btn">
-							<span class="material-symbols-outlined">repeat</span>
-						</button>
+					<div class="playback-controls-bar flex-row middle space-between">
+						<!-- Empty spacer ensures player-controls stay centered -->
+						<div class="control-spacer"></div>
+
+						<div class="player-controls flex-row middle">
+							<button class="action-btn" aria-label="Shuffle">
+								<span class="material-symbols-outlined">shuffle</span>
+							</button>
+							<button class="action-btn" aria-label="Previous track">
+								<span class="material-symbols-outlined">fast_rewind</span>
+							</button>
+							<button class="action-btn" aria-label="Play / Pause">
+								<span class="material-symbols-outlined">pause</span>
+							</button>
+							<button class="action-btn" aria-label="Next track">
+								<span class="material-symbols-outlined">fast_forward</span>
+							</button>
+							<button class="action-btn" aria-label="Repeat">
+								<span class="material-symbols-outlined">repeat</span>
+							</button>
+						</div>
+
+						<div class="volume-control flex-row middle">
+							<button class="action-btn mute-btn" aria-label="Mute / Unmute">
+								<span class="material-symbols-outlined volume-icon">volume_up</span>
+							</button>
+							<input type="range" class="scrubber volume-scrubber" value="100" min="0" max="100" step="1"
+								aria-label="Volume">
+							<span class="volume-value">100%</span>
+						</div>
 					</div>
 
-					<div class="volume-control flex-row middle">
-						<button class="action-btn mute-btn" aria-label="Mute / Unmute">
-							<span class="material-symbols-outlined volume-icon">volume_up</span>
-						</button>
-						<input type="range" class="scrubber volume-scrubber" value="100" min="0" max="100" step="1"
-							aria-label="Volume">
-						<span class="volume-value">100%</span>
-					</div>
 				</footer>
 			</div>
 
