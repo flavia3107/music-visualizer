@@ -1,0 +1,31 @@
+/* Styling when .ui-container is in Fullscreen Mode */
+.ui-container.party-fullscreen {
+	padding: 2rem;
+	background: linear-gradient(135deg, #102531 0%, #12142b 50%, #2a1b25 100%);
+	justify-content: center;
+}
+
+/* Hide side panels in Party Mode to give maximum room to the visualizer */
+.ui-container.party-fullscreen .left-panel,
+.ui-container.party-fullscreen .right-panel {
+	display: none;
+}
+
+/* Expand the center spacer to full width */
+.ui-container.party-fullscreen .center-spacer {
+	min-width: 0;
+	width: 100%;
+	height: 100%;
+}
+
+/* Maximize Canvas in Fullscreen */
+.ui-container.party-fullscreen #mainCanvas {
+	width: 100%;
+	max-height: calc(100vh - 120px); /* Leaves space for the playback controls at the bottom */
+}
+
+/* Style the active state of the Party Mode button */
+.btn-party.active {
+	background: #ff1111;
+	box-shadow: 0 0 15px rgba(255, 68, 68, 0.6);
+}
