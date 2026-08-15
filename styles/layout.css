@@ -45,7 +45,7 @@ footer {
 }
 
 header {
-	margin: 0.5rem 0.5rem 2rem;
+	margin: 1rem;
 }
 
 .center-spacer {
@@ -73,4 +73,5 @@ header {
 
 #mainCanvas {
 	margin: auto;
+	max-height: 90vh;
 }
