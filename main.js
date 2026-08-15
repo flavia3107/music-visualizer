@@ -3,6 +3,7 @@ import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
 import { initButtons, getAudioData, audioElement } from './components/file-upload.js';
 import { initPlayerControls } from './components/audio-control.js';
+import { PartyMode } from './components/full-screen.js';
 
 const playerController = initPlayerControls(audioElement, '.player-controls');
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
@@ -22,6 +23,15 @@ modeItems.forEach(item => {
 		item.classList.add('active');
 
 		if (visualizers[modeName]) manager.setVisualizer(visualizers[modeName]);
+	});
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+	const partyMode = new PartyMode({
+		buttonSelector: '.btn-party',
+		targetSelector: '.ui-container',
+		fullscreenClass: 'party-fullscreen'
 	});
 });
 
