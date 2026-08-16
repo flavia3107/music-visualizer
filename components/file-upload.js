@@ -4,8 +4,9 @@ audioElement.crossOrigin = 'anonymous';
 const fileInput = document.getElementById('audio-file-input');
 const triggerIcon = document.getElementById('btn-select-file');
 const fileNameInput = document.getElementById('file-name-input');
-
-let currentObjectUrl = null;
+const playlistContainer = document.querySelector('.playlist.panel');
+const uploadedFiles = [];
+let currentTrackId = null;
 let audioCtx = null;
 let analyser = null;
 let sourceNode = null;
@@ -21,28 +22,34 @@ function initAudioContext() {
 	analyser.connect(audioCtx.destination);
 }
 
-function cleanupPreviousUrl() {
-	if (currentObjectUrl) {
-		URL.revokeObjectURL(currentObjectUrl);
-		currentObjectUrl = null;
+audioElement.addEventListener('play', () => updatePlaylistUI());
+audioElement.addEventListener('pause', () => updatePlaylistUI());
+audioElement.addEventListener('ended', () => updatePlaylistUI());
+
+export async function playTrack(trackId) {
+	const track = uploadedFiles.find(t => t.id === trackId);
+	if (!track) return;
+
+	if (currentTrackId === trackId) {
+		if (audioElement.paused) {
+			await audioElement.play();
+		} else {
+			audioElement.pause();
+		}
+		return;
 	}
-}
 
-async function _handleUpload(e) {
-	const file = e.target.files[0];
-	if (!file) return;
-
-	cleanupPreviousUrl();
-
-	currentObjectUrl = URL.createObjectURL(file);
-	audioElement.src = currentObjectUrl;
-	fileNameInput.textContent = file.name;
-	fileNameInput.dataset.originalText = file.name;
+	currentTrackId = track.id;
+	audioElement.src = track.url;
+	fileNameInput.textContent = track.name;
+	fileNameInput.dataset.originalText = track.name;
 
 	_checkAndStartMarquee();
 	initAudioContext();
 
-	if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
+	if (audioCtx && audioCtx.state === 'suspended') {
+		await audioCtx.resume();
+	}
 
 	try {
 		await audioElement.play();
@@ -51,8 +58,58 @@ async function _handleUpload(e) {
 	}
 }
 
+async function _handleUpload(e) {
+	const file = e.target.files[0];
+	if (!file) return;
+
+	const track = {
+		id: `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+		name: file.name,
+		url: URL.createObjectURL(file),
+		file: file
+	};
+
+	uploadedFiles.push(track);
+	fileInput.value = '';
+
+	await playTrack(track.id);
+}
+
+export function updatePlaylistUI() {
+	if (!playlistContainer) return;
+
+	playlistContainer.innerHTML = '';
+
+	if (uploadedFiles.length === 0) {
+		playlistContainer.innerHTML = `<div class="track flex-row space-between element">No tracks uploaded</div>`;
+		return;
+	}
+
+	uploadedFiles.forEach((track) => {
+		const isActive = track.id === currentTrackId;
+		const isPlaying = isActive && !audioElement.paused && !audioElement.ended;
+
+		const trackDiv = document.createElement('div');
+		trackDiv.className = `track flex-row space-between element${isActive ? ' active' : ''}`;
+		trackDiv.dataset.id = track.id;
+
+		const textNode = document.createTextNode(track.name);
+		trackDiv.appendChild(textNode);
+
+		const iconSpan = document.createElement('span');
+		iconSpan.textContent = isPlaying ? '▶' : 'II';
+		trackDiv.appendChild(iconSpan);
+
+		trackDiv.addEventListener('click', () => playTrack(track.id));
+
+		playlistContainer.appendChild(trackDiv);
+	});
+}
+
 function _checkAndStartMarquee() {
 	const container = document.querySelector('.song-title');
+	if (!container) return;
+
 	const originalText = fileNameInput.dataset.originalText || fileNameInput.textContent;
 	fileNameInput.textContent = originalText;
 	fileNameInput.classList.remove('animate-marquee');
@@ -65,7 +122,8 @@ function _checkAndStartMarquee() {
 
 export function initButtons() {
 	triggerIcon.addEventListener('click', () => fileInput.click());
-	fileInput.addEventListener('change', (e) => _handleUpload(e));
+	fileInput.addEventListener('change', _handleUpload);
+	updatePlaylistUI();
 }
 
 export function getAudioData() {
@@ -74,6 +132,18 @@ export function getAudioData() {
 	const dataArray = new Uint8Array(analyser.frequencyBinCount);
 	analyser.getByteFrequencyData(dataArray);
 	return dataArray;
+}
+
+export function getPlaylist() {
+	return uploadedFiles;
+}
+
+export function clearPlaylist() {
+	uploadedFiles.forEach(track => URL.revokeObjectURL(track.url));
+	uploadedFiles.length = 0;
+	currentTrackId = null;
+	audioElement.src = '';
+	updatePlaylistUI();
 }
 
 export { audioElement };
