@@ -43,6 +43,7 @@ export async function playTrack(trackId) {
 
 	_checkAndStartMarquee();
 	initAudioContext();
+	updatePlaylistUI();
 
 	if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
 
@@ -74,13 +75,15 @@ function updatePlaylistUI() {
 	if (!playlistContainer) return;
 
 	playlistContainer.innerHTML = '';
+	const mostRecentTrack = uploadedFiles[uploadedFiles.length - 1];
+	const historyTracks = uploadedFiles.filter(track => !mostRecentTrack || track.id !== mostRecentTrack.id);
 
-	if (uploadedFiles.length === 0) {
-		playlistContainer.innerHTML = `<div class="track flex-row space-between element">No tracks uploaded</div>`;
+	if (historyTracks.length === 0) {
+		playlistContainer.innerHTML = `<div class="track flex-row space-between element">No previous tracks</div>`;
 		return;
 	}
 
-	uploadedFiles.forEach((track) => {
+	historyTracks.forEach((track) => {
 		const isActive = track.id === currentTrackId;
 		const isPlaying = isActive && !audioElement.paused && !audioElement.ended;
 		const trackDiv = document.createElement('div');
