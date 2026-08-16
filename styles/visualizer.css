@@ -9,10 +9,10 @@
 	margin-bottom: 1.5rem;
 }
 
-.theme-container {
+/* .theme-container {
 	padding-top: 1rem;
 	border-top: 1px solid #4e4e4e;
-}
+} */
 
 .mode-item {
 	flex: 1 1 calc(50% - 5px);
