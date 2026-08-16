@@ -76,7 +76,9 @@ function updatePlaylistUI() {
 
 	playlistContainer.innerHTML = '';
 	const mostRecentTrack = uploadedFiles[uploadedFiles.length - 1];
-	const historyTracks = uploadedFiles.filter(track => !mostRecentTrack || track.id !== mostRecentTrack.id);
+	const historyTracks = uploadedFiles
+		.filter(track => !mostRecentTrack || track.id !== mostRecentTrack.id)
+		.reverse();
 
 	if (historyTracks.length === 0) {
 		playlistContainer.innerHTML = `<div class="track flex-row space-between element">No previous tracks</div>`;
