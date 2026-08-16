@@ -31,11 +31,8 @@ export async function playTrack(trackId) {
 	if (!track) return;
 
 	if (currentTrackId === trackId) {
-		if (audioElement.paused) {
-			await audioElement.play();
-		} else {
-			audioElement.pause();
-		}
+		if (audioElement.paused) await audioElement.play();
+		else audioElement.pause();
 		return;
 	}
 
@@ -47,9 +44,7 @@ export async function playTrack(trackId) {
 	_checkAndStartMarquee();
 	initAudioContext();
 
-	if (audioCtx && audioCtx.state === 'suspended') {
-		await audioCtx.resume();
-	}
+	if (audioCtx && audioCtx.state === 'suspended') await audioCtx.resume();
 
 	try {
 		await audioElement.play();
@@ -75,7 +70,7 @@ async function _handleUpload(e) {
 	await playTrack(track.id);
 }
 
-export function updatePlaylistUI() {
+function updatePlaylistUI() {
 	if (!playlistContainer) return;
 
 	playlistContainer.innerHTML = '';
@@ -88,20 +83,15 @@ export function updatePlaylistUI() {
 	uploadedFiles.forEach((track) => {
 		const isActive = track.id === currentTrackId;
 		const isPlaying = isActive && !audioElement.paused && !audioElement.ended;
-
 		const trackDiv = document.createElement('div');
 		trackDiv.className = `track flex-row space-between element${isActive ? ' active' : ''}`;
 		trackDiv.dataset.id = track.id;
-
 		const textNode = document.createTextNode(track.name);
 		trackDiv.appendChild(textNode);
-
 		const iconSpan = document.createElement('span');
 		iconSpan.textContent = isPlaying ? '▶' : 'II';
 		trackDiv.appendChild(iconSpan);
-
 		trackDiv.addEventListener('click', () => playTrack(track.id));
-
 		playlistContainer.appendChild(trackDiv);
 	});
 }
@@ -132,18 +122,6 @@ export function getAudioData() {
 	const dataArray = new Uint8Array(analyser.frequencyBinCount);
 	analyser.getByteFrequencyData(dataArray);
 	return dataArray;
-}
-
-export function getPlaylist() {
-	return uploadedFiles;
-}
-
-export function clearPlaylist() {
-	uploadedFiles.forEach(track => URL.revokeObjectURL(track.url));
-	uploadedFiles.length = 0;
-	currentTrackId = null;
-	audioElement.src = '';
-	updatePlaylistUI();
 }
 
 export { audioElement };
