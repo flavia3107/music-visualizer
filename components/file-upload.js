@@ -58,6 +58,14 @@ async function _handleUpload(e) {
 	const file = e.target.files[0];
 	if (!file) return;
 
+	const existingIndex = uploadedFiles.findIndex(
+		t => t.name === file.name && t.file?.size === file.size
+	);
+	if (existingIndex !== -1) {
+		URL.revokeObjectURL(uploadedFiles[existingIndex].url);
+		uploadedFiles.splice(existingIndex, 1);
+	}
+
 	const track = {
 		id: `track_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
 		name: file.name,
