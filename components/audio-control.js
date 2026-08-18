@@ -1,12 +1,6 @@
 export function initPlayerControls(audio, controlsContainer = '.player-controls') {
-	const container = typeof controlsContainer === 'string'
-		? document.querySelector(controlsContainer)
-		: controlsContainer;
-
-	if (!audio || !container) {
-		console.warn('initPlayerControls: Missing audio element or controls container.');
-		return;
-	}
+	const container = typeof controlsContainer === 'string' ? document.querySelector(controlsContainer) : controlsContainer;
+	if (!audio || !container) return;
 
 	const playbackBar = container.closest('.playback-bar') || container.parentElement;
 	const progressContainer = container.previousElementSibling?.classList.contains('progress')
@@ -39,25 +33,18 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 	const updateVolumeIcon = () => {
 		if (!volumeIcon) return;
-		if (audio.muted || audio.volume === 0) {
-			volumeIcon.textContent = 'volume_off';
-		} else if (audio.volume < 0.5) {
-			volumeIcon.textContent = 'volume_down';
-		} else {
-			volumeIcon.textContent = 'volume_up';
-		}
+		if (audio.muted || audio.volume === 0) volumeIcon.textContent = 'volume_off';
+		else if (audio.volume < 0.5) volumeIcon.textContent = 'volume_down';
+		else volumeIcon.textContent = 'volume_up';
 	};
 
 	const updateVolumeUI = () => {
 		const currentVol = audio.muted ? 0 : audio.volume;
 		const displayVal = Math.round(currentVol * 100);
 
-		if (volumeScrubber) {
-			volumeScrubber.value = displayVal;
-		}
-		if (volumeValueSpan) {
-			volumeValueSpan.textContent = `${displayVal}%`;
-		}
+		if (volumeScrubber) volumeScrubber.value = displayVal;
+		if (volumeValueSpan) volumeValueSpan.textContent = `${displayVal}%`;
+
 		updateVolumeIcon();
 	};
 
@@ -65,12 +52,8 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		const current = audio.currentTime || 0;
 		const duration = audio.duration || 0;
 
-		if (currentTimeSpan) {
-			currentTimeSpan.textContent = formatTime(current);
-		}
-		if (durationTimeSpan) {
-			durationTimeSpan.textContent = formatTime(duration);
-		}
+		if (currentTimeSpan) currentTimeSpan.textContent = formatTime(current);
+		if (durationTimeSpan) durationTimeSpan.textContent = formatTime(duration);
 		if (scrubber && !isSeeking) {
 			scrubber.max = duration || 100;
 			scrubber.value = current;
@@ -79,9 +62,7 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 	const handleScrubberInput = () => {
 		isSeeking = true;
-		if (currentTimeSpan) {
-			currentTimeSpan.textContent = formatTime(scrubber.value);
-		}
+		if (currentTimeSpan) currentTimeSpan.textContent = formatTime(scrubber.value);
 	};
 
 	const handleScrubberChange = () => {
@@ -112,13 +93,11 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 	const handleClick = (e) => {
 		const btn = e.target.closest('.action-btn');
-		if (!btn) return;
-
 		const icon = btn.querySelector('.material-symbols-outlined');
-		if (!icon) return;
+
+		if (!btn || !icon) return;
 
 		const action = icon.textContent.trim();
-
 		switch (action) {
 			case 'pause':
 			case 'play_arrow':
@@ -173,13 +152,8 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		scrubber.addEventListener('change', handleScrubberChange);
 	}
 
-	if (volumeScrubber) {
-		volumeScrubber.addEventListener('input', handleVolumeInput);
-	}
-
-	if (muteBtn) {
-		muteBtn.addEventListener('click', handleMuteToggle);
-	}
+	if (volumeScrubber) volumeScrubber.addEventListener('input', handleVolumeInput);
+	if (muteBtn) muteBtn.addEventListener('click', handleMuteToggle);
 
 	// Initial sync
 	handleStateChange();
@@ -202,7 +176,6 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 			}
 
 			if (volumeScrubber) volumeScrubber.removeEventListener('input', handleVolumeInput);
-
 			if (muteBtn) muteBtn.removeEventListener('click', handleMuteToggle);
 		}
 	};
