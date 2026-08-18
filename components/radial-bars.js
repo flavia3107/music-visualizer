@@ -2,19 +2,12 @@ import { Particle } from './particle.js';
 
 export class RadialBarsVisualizer {
 	constructor() {
-		this.config = {
-			barCount: 160,
-			minBarHeight: 2, // Default height for static/fallback bars
-			minRenderHeight: 5 // Minimum height (px) required to draw a bar during playback
-		};
+		this.config = { barCount: 160, minBarHeight: 2, minRenderHeight: 5 };
 		this.RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 		this.particles = [];
 		this.simRotation = 0;
-
-		// Dynamic height tracker for smooth transitions
 		this.smoothedHeights = new Float32Array(this.config.barCount);
 
-		// Color Constants
 		this.COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';
 		this.COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';
 		this.COLOR_PINK = 'hsla(320, 100%, 55%, 1)';
@@ -25,17 +18,12 @@ export class RadialBarsVisualizer {
 
 	_getSimulatedAudioData(bufferLength) {
 		const raw = new Uint8Array(bufferLength);
-		// Output 0 so processed values stay at the minimum bar height (2px)
-		for (let i = 0; i < bufferLength; i++) {
-			raw[i] = 0;
-		}
+		for (let i = 0; i < bufferLength; i++) 	raw[i] = 0;
 		return raw;
 	}
 
 	_processAudioData(inputData, targetLength) {
-		if (!inputData || inputData.length === 0) {
-			return this._getSimulatedAudioData(targetLength);
-		}
+		if (!inputData || inputData.length === 0) return this._getSimulatedAudioData(targetLength);
 
 		const rawBands = new Float32Array(targetLength);
 		const inputLen = inputData.length;
@@ -53,7 +41,6 @@ export class RadialBarsVisualizer {
 			rawBands[i] = Math.min(1.0, contrastVal);
 		}
 
-		// 3-tap spatial smoothing
 		const spatialBands = new Float32Array(targetLength);
 		for (let i = 0; i < targetLength; i++) {
 			const prev = rawBands[(i - 1 + targetLength) % targetLength];
@@ -62,17 +49,13 @@ export class RadialBarsVisualizer {
 			spatialBands[i] = (prev * 0.25) + (curr * 0.50) + (next * 0.25);
 		}
 
-		// Temporal decay tracking
 		const output = new Uint8Array(targetLength);
 		for (let i = 0; i < targetLength; i++) {
 			const targetVal = spatialBands[i];
 			const currentVal = this.smoothedHeights[i];
 
-			if (targetVal > currentVal) {
-				this.smoothedHeights[i] = currentVal + (targetVal - currentVal) * 0.85;
-			} else {
-				this.smoothedHeights[i] = currentVal - (currentVal - targetVal) * 0.28;
-			}
+			if (targetVal > currentVal) this.smoothedHeights[i] = currentVal + (targetVal - currentVal) * 0.85;
+			else this.smoothedHeights[i] = currentVal - (currentVal - targetVal) * 0.28;
 			output[i] = Math.floor(this.smoothedHeights[i] * 255);
 		}
 
@@ -219,14 +202,10 @@ export class RadialBarsVisualizer {
 			const normVal = value / 255;
 			const barHeight = dynamicMinBarHeight + normVal * dynamicMaxBarHeight;
 
-			// When audio is playing, filter out bars below 5px height
-			if (isAudioActive && barHeight < this.config.minRenderHeight) {
-				continue;
-			}
+			if (isAudioActive && barHeight < this.config.minRenderHeight) continue;
 
 			const progress = i / this.config.barCount;
 			const angle = progress * Math.PI * 2;
-
 			const startX = Math.cos(angle) * dynamicRing8Radius;
 			const startY = Math.sin(angle) * dynamicRing8Radius;
 			const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
@@ -246,20 +225,16 @@ export class RadialBarsVisualizer {
 			ctx.stroke();
 			ctx.restore();
 
-			// Burst particles on sharp beat hits
-			if (isAudioActive && normVal > 0.58 && Math.random() < 0.30) {
+			if (isAudioActive && normVal > 0.58 && Math.random() < 0.30)
 				this.particles.push(new Particle(endX, endY, angle, color));
-			}
 		}
 
-		// Render Particle Physics
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
 			p.update();
 			if (p.alpha <= 0) this.particles.splice(i, 1);
 			else p.draw(ctx);
 		}
-
 		ctx.restore();
 	}
 }
