@@ -39,9 +39,8 @@ initButtons();
    ==========================================================================
 
    Planned Core Features:
-   1. Audio Input: Upload local audio files or fetch track via URL
    2. Audio Visualization: Render real-time graphics reacting to audio frequencies
-   4. Media Controls:  skip next/previous
+   4. Media Controls:  skip next/previous - allow songs to play in order (not stop once active is completed)
    5. Visualizer Modes: Implement 4 distinct visualizer presets (e.g., Frequency Bars, Oscilloscope Waveform, Circular Spectrum, Particle Field)
    6. Custom Themes: Color palettes/themes for visualizer and UI background
 
