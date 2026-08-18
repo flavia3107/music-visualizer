@@ -1,4 +1,3 @@
-// Particle System for floating ambient glow dust
 export class Particle {
 	constructor(x, y, angle, color) {
 		this.x = x;
