@@ -27,13 +27,12 @@ audioElement.addEventListener('pause', () => updatePlaylistUI());
 audioElement.addEventListener('ended', async () => {
 	updatePlaylistUI();
 
-	if (uploadedFiles.length === 0) return;
+	if (uploadedFiles.length <= 1) return;
 
 	const currentIndex = uploadedFiles.findIndex(t => t.id === currentTrackId);
-	if (currentIndex !== -1 && currentIndex + 1 < uploadedFiles.length) {
-		const nextTrack = uploadedFiles[currentIndex + 1];
-		await playTrack(nextTrack.id);
-	}
+	if (currentIndex === uploadedFiles.length - 1) await playTrack(uploadedFiles[0].id);
+	else if (currentIndex !== -1 && currentIndex + 1 < uploadedFiles.length)
+		await playTrack(uploadedFiles[currentIndex + 1].id);
 });
 
 export async function playTrack(trackId) {
