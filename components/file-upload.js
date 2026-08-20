@@ -24,7 +24,17 @@ function initAudioContext() {
 
 audioElement.addEventListener('play', () => updatePlaylistUI());
 audioElement.addEventListener('pause', () => updatePlaylistUI());
-audioElement.addEventListener('ended', () => updatePlaylistUI());
+audioElement.addEventListener('ended', async () => {
+	updatePlaylistUI();
+
+	if (uploadedFiles.length === 0) return;
+
+	const currentIndex = uploadedFiles.findIndex(t => t.id === currentTrackId);
+	if (currentIndex !== -1 && currentIndex + 1 < uploadedFiles.length) {
+		const nextTrack = uploadedFiles[currentIndex + 1];
+		await playTrack(nextTrack.id);
+	}
+});
 
 export async function playTrack(trackId) {
 	const track = uploadedFiles.find(t => t.id === trackId);
