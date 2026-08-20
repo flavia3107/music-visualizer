@@ -1,7 +1,8 @@
-export function initPlayerControls(audio, controlsContainer = '.player-controls') {
+export function initPlayerControls(audio, controlsContainer = '.player-controls', trackOptions = {}) {
 	const container = typeof controlsContainer === 'string' ? document.querySelector(controlsContainer) : controlsContainer;
 	if (!audio || !container) return;
 
+	const { getTracks = () => [], getCurrentTrackId = () => null, playTrack = () => { } } = trackOptions;
 	const playbackBar = container.closest('.playback-bar') || container.parentElement;
 	const progressContainer = container.previousElementSibling?.classList.contains('progress')
 		? container.previousElementSibling
@@ -91,9 +92,41 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		updateVolumeUI();
 	};
 
+	const playNextTrack = () => {
+		const tracks = getTracks();
+		if (!tracks.length) return;
+
+		if (isShuffle) {
+			const randomIndex = Math.floor(Math.random() * tracks.length);
+			playTrack(tracks[randomIndex].id);
+			return;
+		}
+
+		const currentId = getCurrentTrackId();
+		const currentIndex = tracks.findIndex(t => t.id === currentId);
+
+		if (currentIndex !== -1 && currentIndex + 1 < tracks.length) playTrack(tracks[currentIndex + 1].id);
+		else playTrack(tracks[0].id);
+	};
+
+	const playPrevTrack = () => {
+		const tracks = getTracks();
+		if (!tracks.length) return;
+
+		if (audio.currentTime > 3) {
+			audio.currentTime = 0;
+			return;
+		}
+
+		const currentId = getCurrentTrackId();
+		const currentIndex = tracks.findIndex(t => t.id === currentId);
+		if (currentIndex > 0) playTrack(tracks[currentIndex - 1].id);
+		else playTrack(tracks[tracks.length - 1].id);
+	};
+
 	const handleClick = (e) => {
 		const btn = e.target.closest('.action-btn');
-		const icon = btn.querySelector('.material-symbols-outlined');
+		const icon = btn?.querySelector('.material-symbols-outlined');
 
 		if (!btn || !icon) return;
 
@@ -108,11 +141,11 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 				break;
 
 			case 'fast_rewind':
-				audio.currentTime = Math.max(0, audio.currentTime - 5);
+				playPrevTrack();
 				break;
 
 			case 'fast_forward':
-				audio.currentTime = Math.min(audio.duration || 0, audio.currentTime + 5);
+				playNextTrack();
 				break;
 
 			case 'shuffle':
@@ -175,8 +208,8 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 				scrubber.removeEventListener('change', handleScrubberChange);
 			}
 
-			if (volumeScrubber) volumeScrubber.removeEventListener('input', handleVolumeInput);
-			if (muteBtn) muteBtn.removeEventListener('click', handleMuteToggle);
+			if (volumeScrubber) volumeScrubber.addEventListener('input', handleVolumeInput);
+			if (muteBtn) muteBtn.addEventListener('click', handleMuteToggle);
 		}
 	};
 }
