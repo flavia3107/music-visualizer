@@ -92,7 +92,6 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		updateVolumeUI();
 	};
 
-	// Helper to get tracks matching the UI display order (newest first)
 	const getUiOrderedTracks = () => {
 		const tracks = getTracks();
 		return [...tracks].reverse();
@@ -111,13 +110,8 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		const currentId = getCurrentTrackId();
 		const currentIndex = uiTracks.findIndex(t => t.id === currentId);
 
-		// Move down the UI list to the next track
-		if (currentIndex !== -1 && currentIndex + 1 < uiTracks.length) {
-			playTrack(uiTracks[currentIndex + 1].id);
-		} else {
-			// Loop back to the top track in the UI list
-			playTrack(uiTracks[0].id);
-		}
+		if (currentIndex !== -1 && currentIndex + 1 < uiTracks.length) playTrack(uiTracks[currentIndex + 1].id);
+		else playTrack(uiTracks[0].id);
 	};
 
 	const playPrevTrack = () => {
@@ -131,14 +125,8 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 		const currentId = getCurrentTrackId();
 		const currentIndex = uiTracks.findIndex(t => t.id === currentId);
-
-		// Move up the UI list to the previous track
-		if (currentIndex > 0) {
-			playTrack(uiTracks[currentIndex - 1].id);
-		} else {
-			// Wrap around to the bottom track in the UI list
-			playTrack(uiTracks[uiTracks.length - 1].id);
-		}
+		if (currentIndex > 0) playTrack(uiTracks[currentIndex - 1].id);
+		else playTrack(uiTracks[uiTracks.length - 1].id);
 	};
 
 	const handleClick = (e) => {
@@ -191,7 +179,6 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		}
 	};
 
-	// Event Listeners
 	container.addEventListener('click', handleClick);
 	audio.addEventListener('play', handleStateChange);
 	audio.addEventListener('pause', handleStateChange);
