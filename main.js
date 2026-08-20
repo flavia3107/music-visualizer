@@ -1,13 +1,13 @@
 import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
-import { initButtons, getAudioData, audioElement, uploadedFiles, currentTrackId, playTrack } from './components/file-upload.js';
+import { initButtons, getAudioData, audioElement, uploadedFiles, getCurrentTrackId, playTrack } from './components/file-upload.js';
 import { initPlayerControls } from './components/audio-control.js';
 import { PartyMode } from './components/full-screen.js';
 
 const playerController = initPlayerControls(audioElement, '.player-controls', {
    getTracks: () => uploadedFiles,
-   getCurrentTrackId: () => currentTrackId,
+   getCurrentTrackId: getCurrentTrackId,
    playTrack: playTrack
 });
 

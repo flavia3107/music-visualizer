@@ -5,11 +5,15 @@ const fileInput = document.getElementById('audio-file-input');
 const triggerIcon = document.getElementById('btn-select-file');
 const fileNameInput = document.getElementById('file-name-input');
 const playlistContainer = document.querySelector('.playlist.panel');
-const uploadedFiles = [];
+export const uploadedFiles = [];
 let currentTrackId = null;
 let audioCtx = null;
 let analyser = null;
 let sourceNode = null;
+
+export function getCurrentTrackId() {
+	return currentTrackId;
+}
 
 function initAudioContext() {
 	if (audioCtx) return;
@@ -24,15 +28,19 @@ function initAudioContext() {
 
 audioElement.addEventListener('play', () => updatePlaylistUI());
 audioElement.addEventListener('pause', () => updatePlaylistUI());
+
 audioElement.addEventListener('ended', async () => {
 	updatePlaylistUI();
 
 	if (uploadedFiles.length <= 1) return;
 
 	const currentIndex = uploadedFiles.findIndex(t => t.id === currentTrackId);
-	if (currentIndex === uploadedFiles.length - 1) await playTrack(uploadedFiles[0].id);
-	else if (currentIndex !== -1 && currentIndex + 1 < uploadedFiles.length)
+
+	if (currentIndex === uploadedFiles.length - 1) {
+		await playTrack(uploadedFiles[0].id);
+	} else if (currentIndex !== -1 && currentIndex + 1 < uploadedFiles.length) {
 		await playTrack(uploadedFiles[currentIndex + 1].id);
+	}
 });
 
 export async function playTrack(trackId) {
