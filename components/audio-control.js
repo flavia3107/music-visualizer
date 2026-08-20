@@ -92,26 +92,37 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		updateVolumeUI();
 	};
 
-	const playNextTrack = () => {
+	// Helper to get tracks matching the UI display order (newest first)
+	const getUiOrderedTracks = () => {
 		const tracks = getTracks();
-		if (!tracks.length) return;
+		return [...tracks].reverse();
+	};
+
+	const playNextTrack = () => {
+		const uiTracks = getUiOrderedTracks();
+		if (!uiTracks.length) return;
 
 		if (isShuffle) {
-			const randomIndex = Math.floor(Math.random() * tracks.length);
-			playTrack(tracks[randomIndex].id);
+			const randomIndex = Math.floor(Math.random() * uiTracks.length);
+			playTrack(uiTracks[randomIndex].id);
 			return;
 		}
 
 		const currentId = getCurrentTrackId();
-		const currentIndex = tracks.findIndex(t => t.id === currentId);
+		const currentIndex = uiTracks.findIndex(t => t.id === currentId);
 
-		if (currentIndex !== -1 && currentIndex + 1 < tracks.length) playTrack(tracks[currentIndex + 1].id);
-		else playTrack(tracks[0].id);
+		// Move down the UI list to the next track
+		if (currentIndex !== -1 && currentIndex + 1 < uiTracks.length) {
+			playTrack(uiTracks[currentIndex + 1].id);
+		} else {
+			// Loop back to the top track in the UI list
+			playTrack(uiTracks[0].id);
+		}
 	};
 
 	const playPrevTrack = () => {
-		const tracks = getTracks();
-		if (!tracks.length) return;
+		const uiTracks = getUiOrderedTracks();
+		if (!uiTracks.length) return;
 
 		if (audio.currentTime > 3) {
 			audio.currentTime = 0;
@@ -119,9 +130,15 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		}
 
 		const currentId = getCurrentTrackId();
-		const currentIndex = tracks.findIndex(t => t.id === currentId);
-		if (currentIndex > 0) playTrack(tracks[currentIndex - 1].id);
-		else playTrack(tracks[tracks.length - 1].id);
+		const currentIndex = uiTracks.findIndex(t => t.id === currentId);
+
+		// Move up the UI list to the previous track
+		if (currentIndex > 0) {
+			playTrack(uiTracks[currentIndex - 1].id);
+		} else {
+			// Wrap around to the bottom track in the UI list
+			playTrack(uiTracks[uiTracks.length - 1].id);
+		}
 	};
 
 	const handleClick = (e) => {
