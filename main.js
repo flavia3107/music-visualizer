@@ -1,35 +1,40 @@
 import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
-import { initButtons, getAudioData, audioElement } from './components/file-upload.js';
+import { initButtons, getAudioData, audioElement, uploadedFiles, currentTrackId, playTrack } from './components/file-upload.js';
 import { initPlayerControls } from './components/audio-control.js';
 import { PartyMode } from './components/full-screen.js';
 
-const playerController = initPlayerControls(audioElement, '.player-controls');
+const playerController = initPlayerControls(audioElement, '.player-controls', {
+   getTracks: () => uploadedFiles,
+   getCurrentTrackId: () => currentTrackId,
+   playTrack: playTrack
+});
+
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
 const manager = new VisualizerManager('mainCanvas', getAudioData);
 const visualizers = {
-	'Radial Bars': new RadialBarsVisualizer(),
-	// 'Waveform Curve': new WaveformCurveVisualizer()
+   'Radial Bars': new RadialBarsVisualizer(),
+   // 'Waveform Curve': new WaveformCurveVisualizer()
 };
 
 manager.setVisualizer(visualizers['Radial Bars']);
 manager.start();
 
 modeItems.forEach(item => {
-	item.addEventListener('click', () => {
-		const modeName = item.textContent.trim();
-		modeItems.forEach(el => el.classList.remove('active'));
-		item.classList.add('active');
+   item.addEventListener('click', () => {
+      const modeName = item.textContent.trim();
+      modeItems.forEach(el => el.classList.remove('active'));
+      item.classList.add('active');
 
-		if (visualizers[modeName]) manager.setVisualizer(visualizers[modeName]);
-	});
+      if (visualizers[modeName]) manager.setVisualizer(visualizers[modeName]);
+   });
 });
 
 const partyMode = new PartyMode({
-	buttonSelector: '.btn-party',
-	targetSelector: '.ui-container',
-	fullscreenClass: 'party-fullscreen'
+   buttonSelector: '.btn-party',
+   targetSelector: '.ui-container',
+   fullscreenClass: 'party-fullscreen'
 });
 
 initButtons();

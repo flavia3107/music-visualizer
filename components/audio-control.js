@@ -126,11 +126,11 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 	const handleClick = (e) => {
 		const btn = e.target.closest('.action-btn');
-		const icon = btn?.querySelector('.material-symbols-outlined');
+		if (!btn) return;
 
-		if (!btn || !icon) return;
+		const icon = btn.querySelector('.material-symbols-outlined');
+		const action = icon ? icon.textContent.trim() : '';
 
-		const action = icon.textContent.trim();
 		switch (action) {
 			case 'pause':
 			case 'play_arrow':
@@ -141,10 +141,12 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 				break;
 
 			case 'fast_rewind':
+			case 'skip_previous':
 				playPrevTrack();
 				break;
 
 			case 'fast_forward':
+			case 'skip_next':
 				playNextTrack();
 				break;
 
@@ -168,7 +170,7 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 
 		if (playBtn) {
 			const icon = playBtn.querySelector('.material-symbols-outlined');
-			icon.textContent = audio.paused ? 'play_arrow' : 'pause';
+			if (icon) icon.textContent = audio.paused ? 'play_arrow' : 'pause';
 		}
 	};
 
