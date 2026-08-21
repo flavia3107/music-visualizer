@@ -1,83 +1,124 @@
+const formatTime = (seconds) => {
+	if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
+	const mins = Math.floor(seconds / 60);
+	const secs = Math.floor(seconds % 60);
+	return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+};
+
 export function initPlayerControls(audio, controlsContainer = '.player-controls', trackOptions = {}) {
-	const container = typeof controlsContainer === 'string' ? document.querySelector(controlsContainer) : controlsContainer;
-	if (!audio || !container) return;
+	const container = typeof controlsContainer === 'string'
+		? document.querySelector(controlsContainer)
+		: controlsContainer;
 
-	const { getTracks = () => [], getCurrentTrackId = () => null, playTrack = () => { } } = trackOptions;
-	const playbackBar = container.closest('.playback-bar') || container.parentElement;
-	const progressContainer = container.previousElementSibling?.classList.contains('progress')
-		? container.previousElementSibling
-		: playbackBar?.querySelector('.progress') || document.querySelector('.progress');
+	if (!audio || !container) return null;
 
-	const scrubber = progressContainer?.querySelector('.scrubber');
-	const timeSpans = progressContainer?.querySelectorAll('.time');
-	const currentTimeSpan = timeSpans?.[0];
-	const durationTimeSpan = timeSpans?.[1];
-	const volumeContainer = container.nextElementSibling?.classList.contains('volume-control')
-		? container.nextElementSibling
-		: playbackBar?.querySelector('.volume-control') || document.querySelector('.volume-control');
-
-	const volumeScrubber = volumeContainer?.querySelector('.volume-scrubber');
-	const volumeIcon = volumeContainer?.querySelector('.volume-icon');
-	const volumeValueSpan = volumeContainer?.querySelector('.volume-value');
-	const muteBtn = volumeContainer?.querySelector('.mute-btn');
+	const {
+		getTracks = () => [],
+		getCurrentTrackId = () => null,
+		playTrack = () => { }
+	} = trackOptions;
+	const root = container.closest('.playback-bar') || container.parentElement || document;
+	const elements = {
+		scrubber: root.querySelector('.progress .scrubber'),
+		currentTime: root.querySelector('.progress .time:nth-of-type(1)'),
+		durationTime: root.querySelector('.progress .time:nth-of-type(2)'),
+		volumeScrubber: root.querySelector('.volume-control .volume-scrubber'),
+		volumeIcon: root.querySelector('.volume-control .volume-icon'),
+		volumeValue: root.querySelector('.volume-control .volume-value'),
+		muteBtn: root.querySelector('.volume-control .mute-btn'),
+		playBtnIcon: container.querySelector('[data-action="play-pause"] .material-symbols-outlined, .action-btn .material-symbols-outlined')
+	};
 
 	let isShuffle = false;
 	let isSeeking = false;
-	let lastVolume = audio.volume > 0 ? audio.volume : 1;
+	let lastVolume = audio.volume || 1;
 
-	const formatTime = (seconds) => {
-		if (isNaN(seconds) || seconds === Infinity) return '00:00';
-		const mins = Math.floor(seconds / 60);
-		const secs = Math.floor(seconds % 60);
-		return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-	};
-
-	const updateVolumeIcon = () => {
-		if (!volumeIcon) return;
-		if (audio.muted || audio.volume === 0) volumeIcon.textContent = 'volume_off';
-		else if (audio.volume < 0.5) volumeIcon.textContent = 'volume_down';
-		else volumeIcon.textContent = 'volume_up';
-	};
 
 	const updateVolumeUI = () => {
 		const currentVol = audio.muted ? 0 : audio.volume;
 		const displayVal = Math.round(currentVol * 100);
 
-		if (volumeScrubber) volumeScrubber.value = displayVal;
-		if (volumeValueSpan) volumeValueSpan.textContent = `${displayVal}%`;
+		if (elements.volumeScrubber) elements.volumeScrubber.value = displayVal;
+		if (elements.volumeValue) elements.volumeValue.textContent = `${displayVal}%`;
 
-		updateVolumeIcon();
+		if (elements.volumeIcon) {
+			if (audio.muted || audio.volume === 0) elements.volumeIcon.textContent = 'volume_off';
+			else if (audio.volume < 0.5) elements.volumeIcon.textContent = 'volume_down';
+			else elements.volumeIcon.textContent = 'volume_up';
+		}
 	};
 
-	const updateProgress = () => {
+	const updateProgressUI = () => {
 		const current = audio.currentTime || 0;
 		const duration = audio.duration || 0;
 
-		if (currentTimeSpan) currentTimeSpan.textContent = formatTime(current);
-		if (durationTimeSpan) durationTimeSpan.textContent = formatTime(duration);
-		if (scrubber && !isSeeking) {
-			scrubber.max = duration || 100;
-			scrubber.value = current;
+		if (elements.currentTime) elements.currentTime.textContent = formatTime(current);
+		if (elements.durationTime) elements.durationTime.textContent = formatTime(duration);
+
+		if (elements.scrubber && !isSeeking) {
+			elements.scrubber.max = duration || 100;
+			elements.scrubber.value = current;
 		}
+	};
+
+	const updatePlaybackState = () => {
+		if (elements.playBtnIcon) {
+			elements.playBtnIcon.textContent = audio.paused ? 'play_arrow' : 'pause';
+		}
+	};
+
+	// --- Track Navigation ---
+
+	const getOrderedTracks = () => [...getTracks()].reverse();
+
+	const navigateTrack = (direction) => {
+		const tracks = getOrderedTracks();
+		if (!tracks.length) return;
+
+		if (direction === 'next' && isShuffle) {
+			const randomIndex = Math.floor(Math.random() * tracks.length);
+			return playTrack(tracks[randomIndex].id);
+		}
+
+		const currentId = getCurrentTrackId();
+		const currentIndex = tracks.findIndex(t => t.id === currentId);
+
+		if (currentIndex === -1) return playTrack(tracks[0].id);
+
+		const targetIndex = direction === 'next'
+			? (currentIndex + 1) % tracks.length
+			: (currentIndex - 1 + tracks.length) % tracks.length;
+
+		playTrack(tracks[targetIndex].id);
+	};
+
+	const handlePrevTrack = () => {
+		if (audio.currentTime > 3) {
+			audio.currentTime = 0;
+			return;
+		}
+		navigateTrack('prev');
 	};
 
 	const handleScrubberInput = () => {
 		isSeeking = true;
-		if (currentTimeSpan) currentTimeSpan.textContent = formatTime(scrubber.value);
+		if (elements.currentTime && elements.scrubber) {
+			elements.currentTime.textContent = formatTime(elements.scrubber.value);
+		}
 	};
 
 	const handleScrubberChange = () => {
-		audio.currentTime = parseFloat(scrubber.value);
+		if (elements.scrubber) {
+			audio.currentTime = parseFloat(elements.scrubber.value);
+		}
 		isSeeking = false;
 	};
 
 	const handleVolumeInput = (e) => {
 		const value = parseFloat(e.target.value) / 100;
 		audio.volume = value;
-		if (value > 0) {
-			audio.muted = false;
-			lastVolume = value;
-		}
+		audio.muted = value === 0;
+		if (value > 0) lastVolume = value;
 		updateVolumeUI();
 	};
 
@@ -92,67 +133,30 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		updateVolumeUI();
 	};
 
-	const getUiOrderedTracks = () => {
-		const tracks = getTracks();
-		return [...tracks].reverse();
-	};
-
-	const playNextTrack = () => {
-		const uiTracks = getUiOrderedTracks();
-		if (!uiTracks.length) return;
-
-		if (isShuffle) {
-			const randomIndex = Math.floor(Math.random() * uiTracks.length);
-			playTrack(uiTracks[randomIndex].id);
-			return;
-		}
-
-		const currentId = getCurrentTrackId();
-		const currentIndex = uiTracks.findIndex(t => t.id === currentId);
-
-		if (currentIndex !== -1 && currentIndex + 1 < uiTracks.length) playTrack(uiTracks[currentIndex + 1].id);
-		else playTrack(uiTracks[0].id);
-	};
-
-	const playPrevTrack = () => {
-		const uiTracks = getUiOrderedTracks();
-		if (!uiTracks.length) return;
-
-		if (audio.currentTime > 3) {
-			audio.currentTime = 0;
-			return;
-		}
-
-		const currentId = getCurrentTrackId();
-		const currentIndex = uiTracks.findIndex(t => t.id === currentId);
-		if (currentIndex > 0) playTrack(uiTracks[currentIndex - 1].id);
-		else playTrack(uiTracks[uiTracks.length - 1].id);
-	};
-
-	const handleClick = (e) => {
+	const handleActionClick = (e) => {
 		const btn = e.target.closest('.action-btn');
 		if (!btn) return;
 
-		const icon = btn.querySelector('.material-symbols-outlined');
-		const action = icon ? icon.textContent.trim() : '';
+		const action = btn.dataset.action || btn.querySelector('.material-symbols-outlined')?.textContent.trim();
 
 		switch (action) {
-			case 'pause':
+			case 'play-pause':
 			case 'play_arrow':
-				if (window.audioCtx && window.audioCtx.state === 'suspended') window.audioCtx.resume();
-
-				if (audio.paused) audio.play();
-				else audio.pause();
+			case 'pause':
+				if (window.audioCtx?.state === 'suspended') window.audioCtx.resume();
+				audio.paused ? audio.play() : audio.pause();
 				break;
 
+			case 'prev':
 			case 'fast_rewind':
 			case 'skip_previous':
-				playPrevTrack();
+				handlePrevTrack();
 				break;
 
+			case 'next':
 			case 'fast_forward':
 			case 'skip_next':
-				playNextTrack();
+				navigateTrack('next');
 				break;
 
 			case 'shuffle':
@@ -167,55 +171,34 @@ export function initPlayerControls(audio, controlsContainer = '.player-controls'
 		}
 	};
 
-	const handleStateChange = () => {
-		const playBtn = Array.from(container.querySelectorAll('.action-btn')).find((btn) => {
-			const text = btn.querySelector('.material-symbols-outlined')?.textContent.trim();
-			return text === 'pause' || text === 'play_arrow';
-		});
 
-		if (playBtn) {
-			const icon = playBtn.querySelector('.material-symbols-outlined');
-			if (icon) icon.textContent = audio.paused ? 'play_arrow' : 'pause';
-		}
-	};
+	const eventBindings = [
+		[container, 'click', handleActionClick],
+		[audio, 'play', updatePlaybackState],
+		[audio, 'pause', updatePlaybackState],
+		[audio, 'timeupdate', updateProgressUI],
+		[audio, 'loadedmetadata', updateProgressUI],
+		[audio, 'volumechange', updateVolumeUI],
+		[elements.scrubber, 'input', handleScrubberInput],
+		[elements.scrubber, 'change', handleScrubberChange],
+		[elements.volumeScrubber, 'input', handleVolumeInput],
+		[elements.muteBtn, 'click', handleMuteToggle],
+	];
 
-	container.addEventListener('click', handleClick);
-	audio.addEventListener('play', handleStateChange);
-	audio.addEventListener('pause', handleStateChange);
-	audio.addEventListener('timeupdate', updateProgress);
-	audio.addEventListener('loadedmetadata', updateProgress);
-	audio.addEventListener('volumechange', updateVolumeUI);
+	eventBindings.forEach(([target, event, handler]) => {
+		target?.addEventListener(event, handler);
+	});
 
-	if (scrubber) {
-		scrubber.addEventListener('input', handleScrubberInput);
-		scrubber.addEventListener('change', handleScrubberChange);
-	}
-
-	if (volumeScrubber) volumeScrubber.addEventListener('input', handleVolumeInput);
-	if (muteBtn) muteBtn.addEventListener('click', handleMuteToggle);
-
-	// Initial sync
-	handleStateChange();
-	updateProgress();
+	updatePlaybackState();
+	updateProgressUI();
 	updateVolumeUI();
 
 	return {
-		isShuffle: () => isShuffle,
+		getIsShuffle: () => isShuffle,
 		destroy: () => {
-			container.removeEventListener('click', handleClick);
-			audio.removeEventListener('play', handleStateChange);
-			audio.removeEventListener('pause', handleStateChange);
-			audio.removeEventListener('timeupdate', updateProgress);
-			audio.removeEventListener('loadedmetadata', updateProgress);
-			audio.removeEventListener('volumechange', updateVolumeUI);
-
-			if (scrubber) {
-				scrubber.removeEventListener('input', handleScrubberInput);
-				scrubber.removeEventListener('change', handleScrubberChange);
-			}
-
-			if (volumeScrubber) volumeScrubber.addEventListener('input', handleVolumeInput);
-			if (muteBtn) muteBtn.addEventListener('click', handleMuteToggle);
+			eventBindings.forEach(([target, event, handler]) => {
+				target?.removeEventListener(event, handler);
+			});
 		}
 	};
 }
