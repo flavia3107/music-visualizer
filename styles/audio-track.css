@@ -63,3 +63,13 @@ input[type="range"]::-moz-range-track {
 	width: 5rem;
 	margin: auto 0.5rem;
 }
+
+.shuffle,
+.repeat {
+	color: #9a9a9a;
+}
+
+.shuffle.active,
+.repeat.active {
+	color: #fff;
+}
