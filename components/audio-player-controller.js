@@ -162,21 +162,15 @@ export class AudioPlayerController {
 
 		switch (action) {
 			case 'play-pause':
-			case 'play_arrow':
-			case 'pause':
 				if (window.audioCtx?.state === 'suspended') window.audioCtx.resume();
 				this.audio.paused ? this.audio.play() : this.audio.pause();
 				break;
 
 			case 'prev':
-			case 'fast_rewind':
-			case 'skip_previous':
 				this.handlePrevTrack();
 				break;
 
 			case 'next':
-			case 'fast_forward':
-			case 'skip_next':
 				this.navigateTrack('next');
 				break;
 
@@ -191,7 +185,6 @@ export class AudioPlayerController {
 				break;
 		}
 	};
-
 
 	_bindEvents() {
 		this.bindings = [
