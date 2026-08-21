@@ -46,7 +46,7 @@ export class AudioPlayerController {
 			volumeIcon: root.querySelector('.volume-control .volume-icon'),
 			volumeValue: root.querySelector('.volume-control .volume-value'),
 			muteBtn: root.querySelector('.volume-control .mute-btn'),
-			playBtnIcon: this.container.querySelector('[data-action="play-pause"] .material-symbols-outlined, .action-btn .material-symbols-outlined')
+			playBtnIcon: this.container.querySelector('[aria-label*="Play"] .material-symbols-outlined, [data-action="play-pause"] .material-symbols-outlined')
 		};
 	}
 
