@@ -2,15 +2,14 @@ import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
 // import { WaveformCurveVisualizer } from './components/waveform.js';
 import { initButtons, getAudioData, audioElement, uploadedFiles, getCurrentTrackId, playTrack } from './components/file-upload.js';
-import { initPlayerControls } from './components/audio-control.js';
 import { PartyMode } from './components/full-screen.js';
+import { AudioPlayerController } from './components/audio-player-controller.js';
 
-const playerController = initPlayerControls(audioElement, '.player-controls', {
+const CONTROLLER_CONFIG = {
    getTracks: () => uploadedFiles,
    getCurrentTrackId: getCurrentTrackId,
    playTrack: playTrack
-});
-
+}
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
 const manager = new VisualizerManager('mainCanvas', getAudioData);
 const visualizers = {
@@ -37,6 +36,15 @@ const partyMode = new PartyMode({
    fullscreenClass: 'party-fullscreen'
 });
 
+function initPlayerControls(audio, controlsContainer, trackOptions) {
+   const controller = new AudioPlayerController(audio, controlsContainer, trackOptions);
+   return {
+      isShuffle: () => controller.isShuffle,
+      destroy: () => controller.destroy()
+   };
+}
+
+initPlayerControls(audioElement, '.player-controls', CONTROLLER_CONFIG);
 initButtons();
 
 /* ==========================================================================
