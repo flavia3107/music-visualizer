@@ -78,13 +78,6 @@ input:focus-visible {
 	cursor: auto;
 }
 
-.btn-party {
-	background: #ff4444;
-	font-weight: bold;
-	border: none;
-	margin-top: 1rem;
-}
-
 .scrubber {
 	cursor: grab;
 }

@@ -47,11 +47,7 @@
 					</div>
 
 					<div class="playback-controls-bar flex-row middle space-between">
-						<div class="control-spacer btn-container">
-							<button class="btn-party element">
-								<span class="material-symbols-outlined"> fullscreen</span>
-							</button>
-						</div>
+						<div class="control-spacer"> </div>
 
 						<div class="player-controls flex-row middle">
 							<button class="action-btn shuffle" data-action="shuffle" aria-label="Shuffle">
@@ -72,12 +68,19 @@
 						</div>
 
 						<div class="volume-control flex-row middle">
-							<button class="action-btn mute-btn" aria-label="Mute / Unmute">
-								<span class="material-symbols-outlined volume-icon">volume_up</span>
-							</button>
-							<input type="range" class="scrubber volume-scrubber" value="100" min="0" max="100" step="1"
-								aria-label="Volume">
-							<span class="volume-value">100%</span>
+							<div class="volume-part">
+								<button class="action-btn mute-btn" aria-label="Mute / Unmute">
+									<span class="material-symbols-outlined volume-icon">volume_up</span>
+								</button>
+								<input type="range" class="scrubber volume-scrubber" value="100" min="0" max="100"
+									step="1" aria-label="Volume">
+								<span class="volume-value">100%</span>
+							</div>
+							<div class="fullscreen">
+								<button class="btn-party action-btn element">
+									<span class="material-symbols-outlined"> fullscreen</span>
+								</button>
+							</div>
 						</div>
 					</div>
 
