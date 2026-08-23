@@ -6,6 +6,7 @@ export class PartyMode {
 
 		this.partyBtn = document.querySelector(this.buttonSelector);
 		this.targetElement = document.querySelector(this.targetSelector);
+		this.fullscreenIcon = document.querySelector('.fullscreen-icon');
 
 		this._boundToggle = this.toggle.bind(this);
 		this._boundHandleChange = this._handleFullscreenChange.bind(this);
@@ -51,6 +52,8 @@ export class PartyMode {
 		const active = this.isFullscreen;
 		this.targetElement.classList.toggle(this.fullscreenClass, active);
 		this.partyBtn.classList.toggle('active', active);
+		this.fullscreenIcon.innerHTML = active ? 'fullscreen_exit' : 'fullscreen';
+
 		window.dispatchEvent(new Event('resize'));
 	}
 
