@@ -47,10 +47,7 @@ function initPlayerControls(audio, controlsContainer, trackOptions) {
 initPlayerControls(audioElement, '.player-controls', CONTROLLER_CONFIG);
 initButtons();
 
-/* ==========================================================================
-   MUSIC VISUALIZER - FEATURE ROADMAP & TODO
-   ==========================================================================
-
+/*
    Planned Core Features:
    2. Audio Visualization: Render real-time graphics reacting to audio frequencies
    5. Visualizer Modes: Implement 4 distinct visualizer presets (e.g., Frequency Bars, Oscilloscope Waveform, Circular Spectrum, Particle Field)
@@ -61,4 +58,4 @@ initButtons();
    - Responsive Canvas Engine: Window resize listener & devicePixelRatio handling for crisp graphics
    - Performance Optimization: requestAnimationFrame loop cleanup on pause/stop to save CPU/GPU resources
    - Drag & Drop Interface: Allow dropping audio files directly onto the visualizer canvas
-   ========================================================================== */
+ */
