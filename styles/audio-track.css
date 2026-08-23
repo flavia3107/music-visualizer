@@ -29,10 +29,6 @@ input[type="range"]::-moz-range-track {
 	padding-top: 1rem;
 }
 
-.player-controls {
-	margin-top: 0.5rem;
-}
-
 .control-group {
 	margin-bottom: 1rem;
 }
@@ -44,16 +40,13 @@ input[type="range"]::-moz-range-track {
 	width: 100%;
 }
 
-.playback-controls-bar > .control-spacer {
-	display: none;
-}
-
-.playback-controls-bar > .player-controls {
+.player-controls {
 	grid-column: 2;
+	margin-top: 0.5rem;
 	justify-self: center;
 }
 
-.playback-controls-bar > .volume-control {
+.volume-control {
 	grid-column: 3;
 	justify-self: end;
 	margin-right: 5rem;
