@@ -90,7 +90,6 @@ export class AudioPlayerController {
 		this.updateVolumeUI();
 	}
 
-
 	getOrderedTracks() {
 		return [...this.trackOptions.getTracks()].reverse();
 	}
@@ -123,15 +122,13 @@ export class AudioPlayerController {
 
 	handleScrubberInput = () => {
 		this.isSeeking = true;
-		if (this.elements.currentTime && this.elements.scrubber) {
+		if (this.elements.currentTime && this.elements.scrubber)
 			this.elements.currentTime.textContent = formatTime(this.elements.scrubber.value);
-		}
 	};
 
 	handleScrubberChange = () => {
-		if (this.elements.scrubber) {
-			this.audio.currentTime = parseFloat(this.elements.scrubber.value);
-		}
+		if (this.elements.scrubber) this.audio.currentTime = parseFloat(this.elements.scrubber.value);
+
 		this.isSeeking = false;
 	};
 
@@ -159,7 +156,6 @@ export class AudioPlayerController {
 		if (!btn) return;
 
 		const action = btn.dataset.action || btn.querySelector('.material-symbols-outlined')?.textContent.trim();
-
 		switch (action) {
 			case 'play-pause':
 				if (window.audioCtx?.state === 'suspended') window.audioCtx.resume();
@@ -200,14 +196,10 @@ export class AudioPlayerController {
 			[this.elements.muteBtn, 'click', this.handleMuteToggle],
 		];
 
-		this.bindings.forEach(([target, event, handler]) => {
-			target?.addEventListener(event, handler);
-		});
+		this.bindings.forEach(([target, event, handler]) => target?.addEventListener(event, handler));
 	}
 
 	destroy() {
-		this.bindings.forEach(([target, event, handler]) => {
-			target?.removeEventListener(event, handler);
-		});
+		this.bindings.forEach(([target, event, handler]) => target?.removeEventListener(event, handler));
 	}
 }
