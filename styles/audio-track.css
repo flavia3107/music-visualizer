@@ -1,22 +1,6 @@
-.playback-bar {
-	height: 4rem;
-	margin-top: 20px;
-	margin-bottom: -1.25rem;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	flex-shrink: 0;
-	border-radius: 12px 12px 0 0;
-	padding-top: 0rem;
-}
-
+/* Range Inputs */
 input[type="range"] {
 	accent-color: #e1e1e1;
-}
-
-.progress-scrubber {
-	width: 100%;
-	margin: auto 1rem;
 }
 
 input[type="range"]::-webkit-slider-runnable-track,
@@ -24,13 +8,13 @@ input[type="range"]::-moz-range-track {
 	border: none;
 }
 
-.progress {
-	width: 100%;
-	padding-top: 1rem;
-}
-
-.control-group {
-	margin-bottom: 1rem;
+/* Layout & Containers */
+.playback-bar {
+	flex-shrink: 0;
+	height: 4rem;
+	margin-block: 1.25rem -1.25rem;
+	padding-top: 0;
+	border-radius: 0.75rem 0.75rem 0 0;
 }
 
 .playback-controls-bar {
@@ -40,25 +24,44 @@ input[type="range"]::-moz-range-track {
 	width: 100%;
 }
 
+.control-group {
+	margin-bottom: 1rem;
+}
+
+/* Controls Placement */
 .player-controls {
 	grid-column: 2;
-	margin-top: 0.5rem;
 	justify-self: center;
+	margin-top: 0.5rem;
 }
 
 .volume-control {
 	grid-column: 3;
 	justify-self: end;
-	min-width: 15rem;
+	display: flex;
+	align-items: center;
 	justify-content: space-between;
+	min-width: 15rem;
 	margin-right: 1rem;
+}
+
+/* Progress & Volume Scrubbers */
+.progress {
+	width: 100%;
+	padding-top: 1rem;
+}
+
+.progress-scrubber {
+	width: 100%;
+	margin-inline: 1rem;
 }
 
 .volume-scrubber {
 	width: 5rem;
-	margin: auto 0.5rem;
+	margin-inline: 0.5rem;
 }
 
+/* Toggle States */
 .shuffle,
 .repeat {
 	color: #9a9a9a;
