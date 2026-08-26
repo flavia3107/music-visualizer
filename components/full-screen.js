@@ -1,65 +1,55 @@
 export class PartyMode {
-	constructor(options = {}) {
-		this.buttonSelector = options.buttonSelector || '.btn-party';
-		this.targetSelector = options.targetSelector || '.ui-container';
-		this.fullscreenClass = options.fullscreenClass || 'party-fullscreen';
+	buttonSelector;
+	targetSelector;
+	fullscreenClass;
+	partyBtn;
+	targetElement;
+	fullscreenIcon;
 
+	constructor({ buttonSelector = '.btn-party', targetSelector = '.ui-container', fullscreenClass = 'party-fullscreen' } = {}) {
+		this.buttonSelector = buttonSelector;
+		this.targetSelector = targetSelector;
+		this.fullscreenClass = fullscreenClass;
 		this.partyBtn = document.querySelector(this.buttonSelector);
 		this.targetElement = document.querySelector(this.targetSelector);
 		this.fullscreenIcon = document.querySelector('.fullscreen-icon');
-
-		this._boundToggle = this.toggle.bind(this);
-		this._boundHandleChange = this._handleFullscreenChange.bind(this);
 
 		this.init();
 	}
 
 	init() {
-		if (!this.partyBtn || !this.targetElement) {
-			console.warn('PartyMode: Button or target element not found in DOM.');
-			return;
-		}
+		if (!this.partyBtn || !this.targetElement) return;
 
-		this.partyBtn.addEventListener('click', this._boundToggle);
-		document.addEventListener('fullscreenchange', this._boundHandleChange);
-		document.addEventListener('webkitfullscreenchange', this._boundHandleChange);
+		this.partyBtn.addEventListener('click', this.toggle);
+		document.addEventListener('fullscreenchange', this._handleFullscreenChange);
 	}
-
-	toggle() {
-		if (!this.isFullscreen) this.enter();
-		else this.exit();
-	}
-
-	enter() {
-		const requestFS = this.targetElement.requestFullscreen ||
-			this.targetElement.webkitRequestFullscreen;
-
-		if (requestFS) requestFS.call(this.targetElement)
-	}
-
-
-	exit() {
-		const exitFS = document.exitFullscreen || document.webkitExitFullscreen;
-		if (exitFS) exitFS.call(document);
-	}
-
 
 	get isFullscreen() {
-		return Boolean(document.fullscreenElement || document.webkitFullscreenElement);
+		return Boolean(document.fullscreenElement);
 	}
 
-	_handleFullscreenChange() {
+	toggle = () => this.isFullscreen ? this.exit() : this.enter();
+
+	async enter() {
+		await this.targetElement?.requestFullscreen();
+	}
+
+	async exit() {
+		if (this.isFullscreen) await document.exitFullscreen();
+	}
+
+	_handleFullscreenChange = () => {
 		const active = this.isFullscreen;
-		this.targetElement.classList.toggle(this.fullscreenClass, active);
-		this.partyBtn.classList.toggle('active', active);
-		this.fullscreenIcon.innerHTML = active ? 'fullscreen_exit' : 'fullscreen';
 
+		this.targetElement?.classList.toggle(this.fullscreenClass, active);
+		this.partyBtn?.classList.toggle('active', active);
+
+		if (this.fullscreenIcon) this.fullscreenIcon.innerHTML = active ? 'fullscreen_exit' : 'fullscreen';
 		window.dispatchEvent(new Event('resize'));
-	}
+	};
 
 	destroy() {
-		if (this.partyBtn) this.partyBtn.removeEventListener('click', this._boundToggle);
-		document.removeEventListener('fullscreenchange', this._boundHandleChange);
-		document.removeEventListener('webkitfullscreenchange', this._boundHandleChange);
+		this.partyBtn?.removeEventListener('click', this.toggle);
+		document.removeEventListener('fullscreenchange', this._handleFullscreenChange);
 	}
 }
