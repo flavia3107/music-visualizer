@@ -4,15 +4,15 @@ import { RadialBarsVisualizer } from './components/radial-bars.js';
 import { initButtons, getAudioData, audioElement, uploadedFiles, getCurrentTrackId, playTrack } from './components/file-upload.js';
 import { PartyMode } from './components/full-screen.js';
 import { AudioPlayerController } from './components/audio-player-controller.js';
-
 const CONTROLLER_CONFIG = {
    getTracks: () => uploadedFiles,
    getCurrentTrackId: getCurrentTrackId,
    playTrack: playTrack
 };
 
+// Preset Color Palettes mapped to your UI themes
 const COLOR_THEMES = {
-   default: {
+   'Neon Blue/Pink': {
       blue: 'hsla(195, 100%, 50%, 1)',
       dullBlue: 'hsla(195, 45%, 45%, 0.7)',
       pink: 'hsla(320, 100%, 55%, 1)',
@@ -20,35 +20,48 @@ const COLOR_THEMES = {
       yellow: 'hsla(45, 100%, 50%, 1)',
       transparent: 'hsla(0, 0%, 0%, 0)'
    },
-   cyberpunk: {
-      blue: 'hsla(180, 100%, 50%, 1)',
-      dullBlue: 'hsla(180, 50%, 35%, 0.7)',
-      pink: 'hsla(300, 100%, 50%, 1)',
-      dullPink: 'hsla(300, 50%, 40%, 0.7)',
-      yellow: 'hsla(60, 100%, 50%, 1)',
+   'Solar Flare': {
+      blue: 'hsla(35, 100%, 55%, 1)',
+      dullBlue: 'hsla(35, 50%, 40%, 0.7)',
+      pink: 'hsla(10, 100%, 50%, 1)',
+      dullPink: 'hsla(10, 50%, 40%, 0.7)',
+      yellow: 'hsla(55, 100%, 50%, 1)',
       transparent: 'hsla(0, 0%, 0%, 0)'
    },
-   sunset: {
-      blue: 'hsla(260, 100%, 65%, 1)',
-      dullBlue: 'hsla(260, 45%, 45%, 0.7)',
-      pink: 'hsla(15, 100%, 60%, 1)',
-      dullPink: 'hsla(15, 45%, 50%, 0.7)',
-      yellow: 'hsla(45, 100%, 60%, 1)',
-      transparent: 'hsla(0, 0%, 0%, 0)'
-   },
-   matrix: {
-      blue: 'hsla(140, 100%, 50%, 1)',
-      dullBlue: 'hsla(140, 45%, 35%, 0.7)',
-      pink: 'hsla(100, 100%, 60%, 1)',
-      dullPink: 'hsla(100, 45%, 40%, 0.7)',
-      yellow: 'hsla(160, 100%, 70%, 1)',
+   'Midnight Chroma': {
+      blue: 'hsla(220, 20%, 65%, 1)',
+      dullBlue: 'hsla(220, 15%, 35%, 0.7)',
+      pink: 'hsla(260, 25%, 60%, 1)',
+      dullPink: 'hsla(260, 20%, 35%, 0.7)',
+      yellow: 'hsla(0, 0%, 85%, 1)',
       transparent: 'hsla(0, 0%, 0%, 0)'
    }
 };
 
+/**
+ * Helper to generate a vibrant random HSLA palette on demand
+ */
+function generateRandomPalette() {
+   const baseHue1 = Math.floor(Math.random() * 360);
+   const baseHue2 = (baseHue1 + 120 + Math.floor(Math.random() * 60)) % 360;
+   const baseHue3 = (baseHue1 + 240 + Math.floor(Math.random() * 60)) % 360;
+
+   return {
+      blue: `hsla(${baseHue1}, 100%, 50%, 1)`,
+      dullBlue: `hsla(${baseHue1}, 45%, 45%, 0.7)`,
+      pink: `hsla(${baseHue2}, 100%, 55%, 1)`,
+      dullPink: `hsla(${baseHue2}, 45%, 50%, 0.7)`,
+      yellow: `hsla(${baseHue3}, 100%, 50%, 1)`,
+      transparent: 'hsla(0, 0%, 0%, 0)'
+   };
+}
+
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
+const themeItems = document.querySelectorAll('.theme-container .theme-item');
+
+// Initialize VisualizerManager with the default active palette
 const manager = new VisualizerManager('mainCanvas', getAudioData, {
-   colors: COLOR_THEMES.default
+   colors: COLOR_THEMES['Neon Blue/Pink']
 });
 
 const visualizers = {
@@ -59,6 +72,7 @@ const visualizers = {
 manager.setVisualizer(visualizers['Radial Bars']);
 manager.start();
 
+// Mode Selection Handler
 modeItems.forEach(item => {
    item.addEventListener('click', () => {
       const modeName = item.textContent.trim();
@@ -69,24 +83,20 @@ modeItems.forEach(item => {
    });
 });
 
-const themeItems = document.querySelectorAll('.theme-option, [data-theme]');
+// Theme Selection Handler
 themeItems.forEach(item => {
    item.addEventListener('click', () => {
-      const themeKey = item.dataset.theme || item.textContent.trim().toLowerCase();
-      if (COLOR_THEMES[themeKey]) {
-         manager.setPalette(COLOR_THEMES[themeKey]);
+      const themeName = item.textContent.trim();
 
-         themeItems.forEach(el => el.classList.remove('active'));
-         item.classList.add('active');
+      themeItems.forEach(el => el.classList.remove('active'));
+      item.classList.add('active');
+
+      if (themeName === 'Random Theme') {
+         const randomPalette = generateRandomPalette();
+         manager.setPalette(randomPalette);
+      } else if (COLOR_THEMES[themeName]) {
+         manager.setPalette(COLOR_THEMES[themeName]);
       }
-   });
-});
-
-const colorInputs = document.querySelectorAll('input[data-color-key]');
-colorInputs.forEach(input => {
-   input.addEventListener('input', (e) => {
-      const key = e.target.dataset.colorKey;
-      manager.setColors({ [key]: e.target.value });
    });
 });
 
