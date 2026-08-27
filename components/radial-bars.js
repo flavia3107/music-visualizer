@@ -7,18 +7,22 @@ export class RadialBarsVisualizer {
 		this.particles = [];
 		this.simRotation = 0;
 		this.smoothedHeights = new Float32Array(this.config.barCount);
+	}
 
-		this.COLOR_BLUE = 'hsla(195, 100%, 50%, 1)';
-		this.COLOR_DULL_BLUE = 'hsla(195, 45%, 45%, 0.7)';
-		this.COLOR_PINK = 'hsla(320, 100%, 55%, 1)';
-		this.COLOR_DULL_PINK = 'hsla(320, 45%, 50%, 0.7)';
-		this.COLOR_YELLOW = 'hsla(45, 100%, 50%, 1)';
-		this.COLOR_TRANSPARENT = 'hsla(0, 0%, 0%, 0)';
+	_getThemeColors(colors = {}) {
+		return {
+			blue: colors.blue || colors.primary || 'hsla(195, 100%, 50%, 1)',
+			dullBlue: colors.dullBlue || colors.secondary || 'hsla(195, 45%, 45%, 0.7)',
+			pink: colors.pink || colors.accent || 'hsla(320, 100%, 55%, 1)',
+			dullPink: colors.dullPink || 'hsla(320, 45%, 50%, 0.7)',
+			yellow: colors.yellow || 'hsla(45, 100%, 50%, 1)',
+			transparent: colors.transparent || 'hsla(0, 0%, 0%, 0)'
+		};
 	}
 
 	_getSimulatedAudioData(bufferLength) {
 		const raw = new Uint8Array(bufferLength);
-		for (let i = 0; i < bufferLength; i++) 	raw[i] = 0;
+		for (let i = 0; i < bufferLength; i++)  raw[i] = 0;
 		return raw;
 	}
 
@@ -62,74 +66,76 @@ export class RadialBarsVisualizer {
 		return output;
 	}
 
-	_getRingGradient(ctx, ringNumber, radius) {
+	_getRingGradient(ctx, ringNumber, radius, palette) {
 		const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
 		switch (ringNumber) {
 			case 1:
-				grad.addColorStop(0.00, this.COLOR_BLUE);
-				grad.addColorStop(0.50, this.COLOR_BLUE);
-				grad.addColorStop(0.5001, this.COLOR_PINK);
-				grad.addColorStop(1.00, this.COLOR_PINK);
+				grad.addColorStop(0.00, palette.blue);
+				grad.addColorStop(0.50, palette.blue);
+				grad.addColorStop(0.5001, palette.pink);
+				grad.addColorStop(1.00, palette.pink);
 				break;
 			case 2:
-				grad.addColorStop(0.00, this.COLOR_DULL_BLUE);
-				grad.addColorStop(0.50, this.COLOR_DULL_BLUE);
-				grad.addColorStop(0.5001, this.COLOR_DULL_PINK);
-				grad.addColorStop(1.00, this.COLOR_DULL_PINK);
+				grad.addColorStop(0.00, palette.dullBlue);
+				grad.addColorStop(0.50, palette.dullBlue);
+				grad.addColorStop(0.5001, palette.dullPink);
+				grad.addColorStop(1.00, palette.dullPink);
 				break;
 			case 3:
-				grad.addColorStop(0.00, this.COLOR_PINK);
-				grad.addColorStop(0.50, this.COLOR_PINK);
-				grad.addColorStop(0.5001, this.COLOR_YELLOW);
-				grad.addColorStop(1.00, this.COLOR_YELLOW);
+				grad.addColorStop(0.00, palette.pink);
+				grad.addColorStop(0.50, palette.pink);
+				grad.addColorStop(0.5001, palette.yellow);
+				grad.addColorStop(1.00, palette.yellow);
 				break;
 			case 4:
-				grad.addColorStop(0.00, this.COLOR_DULL_PINK);
-				grad.addColorStop(0.50, this.COLOR_DULL_PINK);
-				grad.addColorStop(0.5001, this.COLOR_DULL_BLUE);
-				grad.addColorStop(1.00, this.COLOR_DULL_BLUE);
+				grad.addColorStop(0.00, palette.dullPink);
+				grad.addColorStop(0.50, palette.dullPink);
+				grad.addColorStop(0.5001, palette.dullBlue);
+				grad.addColorStop(1.00, palette.dullBlue);
 				break;
 			case 5:
-				grad.addColorStop(0.00, this.COLOR_PINK);
-				grad.addColorStop(0.50, this.COLOR_PINK);
-				grad.addColorStop(0.5001, this.COLOR_BLUE);
-				grad.addColorStop(1.00, this.COLOR_BLUE);
+				grad.addColorStop(0.00, palette.pink);
+				grad.addColorStop(0.50, palette.pink);
+				grad.addColorStop(0.5001, palette.blue);
+				grad.addColorStop(1.00, palette.blue);
 				break;
 			case 6:
-				grad.addColorStop(0.00, this.COLOR_DULL_BLUE);
-				grad.addColorStop(0.50, this.COLOR_DULL_BLUE);
-				grad.addColorStop(0.5001, this.COLOR_TRANSPARENT);
-				grad.addColorStop(1.00, this.COLOR_TRANSPARENT);
+				grad.addColorStop(0.00, palette.dullBlue);
+				grad.addColorStop(0.50, palette.dullBlue);
+				grad.addColorStop(0.5001, palette.transparent);
+				grad.addColorStop(1.00, palette.transparent);
 				break;
 			case 7:
-				grad.addColorStop(0.00, this.COLOR_BLUE);
-				grad.addColorStop(0.50, this.COLOR_BLUE);
-				grad.addColorStop(0.5001, this.COLOR_DULL_PINK);
-				grad.addColorStop(1.00, this.COLOR_DULL_PINK);
+				grad.addColorStop(0.00, palette.blue);
+				grad.addColorStop(0.50, palette.blue);
+				grad.addColorStop(0.5001, palette.dullPink);
+				grad.addColorStop(1.00, palette.dullPink);
 				break;
 			case 8:
-				grad.addColorStop(0.00, this.COLOR_BLUE);
-				grad.addColorStop(0.35, this.COLOR_BLUE);
-				grad.addColorStop(0.45, this.COLOR_PINK);
-				grad.addColorStop(0.55, this.COLOR_PINK);
-				grad.addColorStop(0.65, this.COLOR_YELLOW);
-				grad.addColorStop(1.00, this.COLOR_YELLOW);
+				grad.addColorStop(0.00, palette.blue);
+				grad.addColorStop(0.35, palette.blue);
+				grad.addColorStop(0.45, palette.pink);
+				grad.addColorStop(0.55, palette.pink);
+				grad.addColorStop(0.65, palette.yellow);
+				grad.addColorStop(1.00, palette.yellow);
 				break;
 			default:
-				grad.addColorStop(0, this.COLOR_BLUE);
-				grad.addColorStop(1, this.COLOR_PINK);
+				grad.addColorStop(0, palette.blue);
+				grad.addColorStop(1, palette.pink);
 		}
 		return grad;
 	}
 
-	_getPureBarColor(angle) {
+	_getPureBarColor(angle, palette) {
 		const cosVal = Math.cos(angle);
 		const sinVal = Math.sin(angle);
-		if (Math.abs(sinVal) > 0.82) return this.COLOR_PINK;
-		return cosVal < 0 ? this.COLOR_BLUE : this.COLOR_YELLOW;
+		if (Math.abs(sinVal) > 0.82) return palette.pink;
+		return cosVal < 0 ? palette.blue : palette.yellow;
 	}
 
-	draw(ctx, rawAudioData, metrics) {
+	draw(ctx, rawAudioData, metrics, colors) {
+		const palette = this._getThemeColors(colors);
+
 		ctx.clearRect(0, 0, metrics.width, metrics.height);
 
 		const isAudioActive = rawAudioData && rawAudioData.length > 0;
@@ -157,7 +163,7 @@ export class RadialBarsVisualizer {
 			const baseRadius = baseInnerRadius * factor;
 			const currentRadius = baseRadius * (0.96 + bassIntensity * 0.08);
 
-			ctx.strokeStyle = this._getRingGradient(ctx, ringNumber, currentRadius);
+			ctx.strokeStyle = this._getRingGradient(ctx, ringNumber, currentRadius, palette);
 			ctx.lineWidth = (ringNumber % 2 === 1) ? 3 : 1.5;
 
 			if ([1, 3, 5, 8].includes(ringNumber)) {
@@ -178,7 +184,7 @@ export class RadialBarsVisualizer {
 				ctx.rect(-currentRadius - 10, -currentRadius - 10, currentRadius + 10, (currentRadius + 10) * 2);
 				ctx.clip();
 
-				ctx.shadowColor = this.COLOR_BLUE;
+				ctx.shadowColor = palette.blue;
 				ctx.shadowBlur = 6 + (bassIntensity * 12);
 				ctx.beginPath();
 				ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
@@ -210,8 +216,7 @@ export class RadialBarsVisualizer {
 			const startY = Math.sin(angle) * dynamicRing8Radius;
 			const endX = Math.cos(angle) * (dynamicRing8Radius + barHeight);
 			const endY = Math.sin(angle) * (dynamicRing8Radius + barHeight);
-
-			const color = this._getPureBarColor(angle);
+			const color = this._getPureBarColor(angle, palette);
 
 			ctx.save();
 			ctx.strokeStyle = color;
