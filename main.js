@@ -4,43 +4,15 @@ import { RadialBarsVisualizer } from './components/radial-bars.js';
 import { initButtons, getAudioData, audioElement, uploadedFiles, getCurrentTrackId, playTrack } from './components/file-upload.js';
 import { PartyMode } from './components/full-screen.js';
 import { AudioPlayerController } from './components/audio-player-controller.js';
+import { COLOR_THEMES } from './config/themes.js';
+
 const CONTROLLER_CONFIG = {
    getTracks: () => uploadedFiles,
    getCurrentTrackId: getCurrentTrackId,
    playTrack: playTrack
 };
 
-// Preset Color Palettes mapped to your UI themes
-const COLOR_THEMES = {
-   'Neon Blue/Pink': {
-      blue: 'hsla(195, 100%, 50%, 1)',
-      dullBlue: 'hsla(195, 45%, 45%, 0.7)',
-      pink: 'hsla(320, 100%, 55%, 1)',
-      dullPink: 'hsla(320, 45%, 50%, 0.7)',
-      yellow: 'hsla(45, 100%, 50%, 1)',
-      transparent: 'hsla(0, 0%, 0%, 0)'
-   },
-   'Solar Flare': {
-      blue: 'hsla(35, 100%, 55%, 1)',
-      dullBlue: 'hsla(35, 50%, 40%, 0.7)',
-      pink: 'hsla(10, 100%, 50%, 1)',
-      dullPink: 'hsla(10, 50%, 40%, 0.7)',
-      yellow: 'hsla(55, 100%, 50%, 1)',
-      transparent: 'hsla(0, 0%, 0%, 0)'
-   },
-   'Midnight Chroma': {
-      blue: 'hsla(220, 20%, 65%, 1)',
-      dullBlue: 'hsla(220, 15%, 35%, 0.7)',
-      pink: 'hsla(260, 25%, 60%, 1)',
-      dullPink: 'hsla(260, 20%, 35%, 0.7)',
-      yellow: 'hsla(0, 0%, 85%, 1)',
-      transparent: 'hsla(0, 0%, 0%, 0)'
-   }
-};
 
-/**
- * Helper to generate a vibrant random HSLA palette on demand
- */
 function generateRandomPalette() {
    const baseHue1 = Math.floor(Math.random() * 360);
    const baseHue2 = (baseHue1 + 120 + Math.floor(Math.random() * 60)) % 360;
@@ -58,8 +30,6 @@ function generateRandomPalette() {
 
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
 const themeItems = document.querySelectorAll('.theme-container .theme-item');
-
-// Initialize VisualizerManager with the default active palette
 const manager = new VisualizerManager('mainCanvas', getAudioData, {
    colors: COLOR_THEMES['Neon Blue/Pink']
 });
@@ -71,8 +41,6 @@ const visualizers = {
 
 manager.setVisualizer(visualizers['Radial Bars']);
 manager.start();
-
-// Mode Selection Handler
 modeItems.forEach(item => {
    item.addEventListener('click', () => {
       const modeName = item.textContent.trim();
@@ -83,7 +51,6 @@ modeItems.forEach(item => {
    });
 });
 
-// Theme Selection Handler
 themeItems.forEach(item => {
    item.addEventListener('click', () => {
       const themeName = item.textContent.trim();
