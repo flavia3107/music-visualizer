@@ -11,11 +11,11 @@ export class RadialBarsVisualizer {
 
 	_getThemeColors(colors = {}) {
 		return {
-			blue: colors.blue || colors.primary || 'hsla(195, 100%, 50%, 1)',
-			dullBlue: colors.dullBlue || colors.secondary || 'hsla(195, 45%, 45%, 0.7)',
-			pink: colors.pink || colors.accent || 'hsla(320, 100%, 55%, 1)',
-			dullPink: colors.dullPink || 'hsla(320, 45%, 50%, 0.7)',
-			yellow: colors.yellow || 'hsla(45, 100%, 50%, 1)',
+			primary: colors.primary || colors.blue || 'hsla(195, 100%, 50%, 1)',
+			mutedPrimary: colors.mutedPrimary || colors.dullBlue || 'hsla(195, 45%, 45%, 0.7)',
+			secondary: colors.secondary || colors.pink || 'hsla(320, 100%, 55%, 1)',
+			mutedSecondary: colors.mutedSecondary || colors.dullPink || 'hsla(320, 45%, 50%, 0.7)',
+			accent: colors.accent || colors.yellow || 'hsla(45, 100%, 50%, 1)',
 			transparent: colors.transparent || 'hsla(0, 0%, 0%, 0)'
 		};
 	}
@@ -70,58 +70,58 @@ export class RadialBarsVisualizer {
 		const grad = ctx.createLinearGradient(-radius, 0, radius, 0);
 		switch (ringNumber) {
 			case 1:
-				grad.addColorStop(0.00, palette.blue);
-				grad.addColorStop(0.50, palette.blue);
-				grad.addColorStop(0.5001, palette.pink);
-				grad.addColorStop(1.00, palette.pink);
+				grad.addColorStop(0.00, palette.primary);
+				grad.addColorStop(0.50, palette.primary);
+				grad.addColorStop(0.5001, palette.secondary);
+				grad.addColorStop(1.00, palette.secondary);
 				break;
 			case 2:
-				grad.addColorStop(0.00, palette.dullBlue);
-				grad.addColorStop(0.50, palette.dullBlue);
-				grad.addColorStop(0.5001, palette.dullPink);
-				grad.addColorStop(1.00, palette.dullPink);
+				grad.addColorStop(0.00, palette.mutedPrimary);
+				grad.addColorStop(0.50, palette.mutedPrimary);
+				grad.addColorStop(0.5001, palette.mutedSecondary);
+				grad.addColorStop(1.00, palette.mutedSecondary);
 				break;
 			case 3:
-				grad.addColorStop(0.00, palette.pink);
-				grad.addColorStop(0.50, palette.pink);
-				grad.addColorStop(0.5001, palette.yellow);
-				grad.addColorStop(1.00, palette.yellow);
+				grad.addColorStop(0.00, palette.secondary);
+				grad.addColorStop(0.50, palette.secondary);
+				grad.addColorStop(0.5001, palette.accent);
+				grad.addColorStop(1.00, palette.accent);
 				break;
 			case 4:
-				grad.addColorStop(0.00, palette.dullPink);
-				grad.addColorStop(0.50, palette.dullPink);
-				grad.addColorStop(0.5001, palette.dullBlue);
-				grad.addColorStop(1.00, palette.dullBlue);
+				grad.addColorStop(0.00, palette.mutedSecondary);
+				grad.addColorStop(0.50, palette.mutedSecondary);
+				grad.addColorStop(0.5001, palette.mutedPrimary);
+				grad.addColorStop(1.00, palette.mutedPrimary);
 				break;
 			case 5:
-				grad.addColorStop(0.00, palette.pink);
-				grad.addColorStop(0.50, palette.pink);
-				grad.addColorStop(0.5001, palette.blue);
-				grad.addColorStop(1.00, palette.blue);
+				grad.addColorStop(0.00, palette.secondary);
+				grad.addColorStop(0.50, palette.secondary);
+				grad.addColorStop(0.5001, palette.primary);
+				grad.addColorStop(1.00, palette.primary);
 				break;
 			case 6:
-				grad.addColorStop(0.00, palette.dullBlue);
-				grad.addColorStop(0.50, palette.dullBlue);
+				grad.addColorStop(0.00, palette.mutedPrimary);
+				grad.addColorStop(0.50, palette.mutedPrimary);
 				grad.addColorStop(0.5001, palette.transparent);
 				grad.addColorStop(1.00, palette.transparent);
 				break;
 			case 7:
-				grad.addColorStop(0.00, palette.blue);
-				grad.addColorStop(0.50, palette.blue);
-				grad.addColorStop(0.5001, palette.dullPink);
-				grad.addColorStop(1.00, palette.dullPink);
+				grad.addColorStop(0.00, palette.primary);
+				grad.addColorStop(0.50, palette.primary);
+				grad.addColorStop(0.5001, palette.mutedSecondary);
+				grad.addColorStop(1.00, palette.mutedSecondary);
 				break;
 			case 8:
-				grad.addColorStop(0.00, palette.blue);
-				grad.addColorStop(0.35, palette.blue);
-				grad.addColorStop(0.45, palette.pink);
-				grad.addColorStop(0.55, palette.pink);
-				grad.addColorStop(0.65, palette.yellow);
-				grad.addColorStop(1.00, palette.yellow);
+				grad.addColorStop(0.00, palette.primary);
+				grad.addColorStop(0.35, palette.primary);
+				grad.addColorStop(0.45, palette.secondary);
+				grad.addColorStop(0.55, palette.secondary);
+				grad.addColorStop(0.65, palette.accent);
+				grad.addColorStop(1.00, palette.accent);
 				break;
 			default:
-				grad.addColorStop(0, palette.blue);
-				grad.addColorStop(1, palette.pink);
+				grad.addColorStop(0, palette.primary);
+				grad.addColorStop(1, palette.secondary);
 		}
 		return grad;
 	}
@@ -129,8 +129,8 @@ export class RadialBarsVisualizer {
 	_getPureBarColor(angle, palette) {
 		const cosVal = Math.cos(angle);
 		const sinVal = Math.sin(angle);
-		if (Math.abs(sinVal) > 0.82) return palette.pink;
-		return cosVal < 0 ? palette.blue : palette.yellow;
+		if (Math.abs(sinVal) > 0.82) return palette.secondary;
+		return cosVal < 0 ? palette.primary : palette.accent;
 	}
 
 	draw(ctx, rawAudioData, metrics, colors) {
@@ -184,7 +184,7 @@ export class RadialBarsVisualizer {
 				ctx.rect(-currentRadius - 10, -currentRadius - 10, currentRadius + 10, (currentRadius + 10) * 2);
 				ctx.clip();
 
-				ctx.shadowColor = palette.blue;
+				ctx.shadowColor = palette.primary;
 				ctx.shadowBlur = 6 + (bassIntensity * 12);
 				ctx.beginPath();
 				ctx.arc(0, 0, currentRadius, 0, Math.PI * 2);
