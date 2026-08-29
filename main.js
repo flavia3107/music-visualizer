@@ -63,5 +63,4 @@ initButtons();
    - Responsive Canvas Engine: Window resize listener & devicePixelRatio handling for crisp graphics
    - Performance Optimization: requestAnimationFrame loop cleanup on pause/stop to save CPU/GPU resources
    - Drag & Drop Interface: Allow dropping audio files directly onto the visualizer canvas
-   - Rename config variables do be more descriptive / inclusive
  */
