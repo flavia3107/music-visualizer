@@ -15,11 +15,7 @@ import {
 } from './components/file-upload.js';
 import { COLOR_THEMES } from './config/themes.js';
 
-const CONTROLLER_CONFIG = {
-   getTracks: () => uploadedFiles,
-   getCurrentTrackId,
-   playTrack
-};
+const CONTROLLER_CONFIG = { getTracks: () => uploadedFiles, getCurrentTrackId, playTrack };
 
 const visualizers = {
    'Radial Bars': new RadialBarsVisualizer(),
@@ -29,11 +25,7 @@ const visualizers = {
 const manager = new VisualizerManager('mainCanvas', getAudioData, { colors: COLOR_THEMES['Neon Blue/Pink'] });
 const themeManager = new ThemeManager(manager);
 
-const partyMode = new PartyMode({
-   buttonSelector: '.btn-party',
-   targetSelector: '.ui-container',
-   fullscreenClass: 'party-fullscreen'
-});
+const partyMode = new PartyMode({ buttonSelector: '.btn-party', targetSelector: '.ui-container', fullscreenClass: 'party-fullscreen' });
 
 const modeItems = document.querySelectorAll('.modes-grid .mode-item');
 modeItems.forEach(item => {
