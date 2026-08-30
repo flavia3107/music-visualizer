@@ -1,11 +1,10 @@
-import { COLOR_THEMES } from '../config/themes.js';
+import { THEME_CONFIG } from '../config/themes.js';
 
 export class ThemeManager {
-	constructor(visualizerManager, options = {}) {
+	constructor(visualizerManager) {
 		this.visualizerManager = visualizerManager;
-		this.containerSelector = options.containerSelector || '.theme-container .theme-item';
-		this.themeItems = document.querySelectorAll(this.containerSelector);
-
+		this.container = document.querySelector('.theme-container');
+		this.activeThemeId = THEME_CONFIG[0].id;
 		this.init();
 	}
 
@@ -24,21 +23,44 @@ export class ThemeManager {
 		};
 	}
 
+	renderThemes() {
+		if (!this.container) return;
+		const itemsHTML = THEME_CONFIG.map(theme => {
+			const gradient = `linear-gradient(90deg, ${theme.uiColors.join(', ')})`;
+			const isActive = theme.id === this.activeThemeId ? 'active' : '';
+
+			return `
+                <div class="theme-item element ${isActive}" 
+                     data-theme-id="${theme.id}"
+                     style="background: ${gradient};">
+                    ${theme.name}
+                </div>
+            `;
+		}).join('');
+		this.container.innerHTML += itemsHTML;
+	}
+
 	init() {
-		this.themeItems.forEach(item => {
-			item.addEventListener('click', () => {
-				const themeName = item.textContent.trim();
+		if (!this.container) return;
 
-				this.themeItems.forEach(el => el.classList.remove('active'));
-				item.classList.add('active');
+		this.renderThemes();
+		this.container.addEventListener('click', (event) => {
+			const item = event.target.closest('.theme-item');
+			if (!item) return;
 
-				if (themeName === 'Random Theme') {
-					const randomPalette = this.generateRandomPalette();
-					this.visualizerManager.setPalette(randomPalette);
-				} else if (COLOR_THEMES[themeName]) {
-					this.visualizerManager.setPalette(COLOR_THEMES[themeName]);
-				}
-			});
+			const themeId = item.dataset.themeId;
+			const themeObj = THEME_CONFIG.find(t => t.id === themeId);
+
+			if (!themeObj) return;
+
+			this.container.querySelectorAll('.theme-item').forEach(el => el.classList.remove('active'));
+			item.classList.add('active');
+			this.activeThemeId = themeId;
+
+			if (themeObj.isRandom) {
+				const randomPalette = this.generateRandomPalette();
+				this.visualizerManager.setPalette(randomPalette);
+			} else if (themeObj.palette) this.visualizerManager.setPalette(themeObj.palette);
 		});
 	}
 }
