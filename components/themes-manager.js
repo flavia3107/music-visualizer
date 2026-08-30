@@ -25,17 +25,25 @@ export class ThemeManager {
 
 	renderThemes() {
 		if (!this.container) return;
+
 		const itemsHTML = THEME_CONFIG.map(theme => {
-			const gradient = `linear-gradient(90deg, ${theme.uiColors.join(', ')})`;
-			const isActive = theme.id === this.activeThemeId ? 'active' : '';
+			const isActive = theme.id === this.activeThemeId;
+			let circleStyle = '';
+			if (theme.isRandom) {
+				circleStyle = `background: conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);`;
+			} else {
+				circleStyle = `background: linear-gradient(90deg, ${theme.uiColors[0]} 50%, ${theme.uiColors[1]} 50%);`;
+			}
 
 			return `
-                <div class="theme-item element ${isActive}" 
-                     data-theme-id="${theme.id}"
-                     style="background: ${gradient};">
-                    ${theme.name}
-                </div>
-            `;
+				<div class="theme-item element ${isActive ? 'active' : ''}" data-theme-id="${theme.id}">
+					<div class="theme-info">
+						<span class="theme-name">${theme.name}</span>
+						<span class="theme-status">${isActive ? 'Active' : ''}</span>
+					</div>
+					<div class="theme-circle ${theme.isRandom ? 'random-circle' : ''}" style="${circleStyle}"></div>
+				</div>
+			`;
 		}).join('');
 		this.container.innerHTML += itemsHTML;
 	}
