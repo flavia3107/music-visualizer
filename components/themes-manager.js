@@ -15,11 +15,11 @@ export class ThemeManager {
 		const baseHue3 = (baseHue1 + 240 + Math.floor(Math.random() * 60)) % 360;
 
 		return {
-			blue: `hsla(${baseHue1}, 100%, 50%, 1)`,
-			dullBlue: `hsla(${baseHue1}, 45%, 45%, 0.7)`,
-			pink: `hsla(${baseHue2}, 100%, 55%, 1)`,
-			dullPink: `hsla(${baseHue2}, 45%, 50%, 0.7)`,
-			yellow: `hsla(${baseHue3}, 100%, 50%, 1)`,
+			primary: `hsla(${baseHue1}, 100%, 50%, 1)`,
+			mutedPrimary: `hsla(${baseHue1}, 45%, 45%, 0.7)`,
+			secondary: `hsla(${baseHue2}, 100%, 55%, 1)`,
+			mutedSecondary: `hsla(${baseHue2}, 45%, 50%, 0.7)`,
+			accent: `hsla(${baseHue3}, 100%, 50%, 1)`,
 			transparent: 'hsla(0, 0%, 0%, 0)'
 		};
 	}

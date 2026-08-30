@@ -7,11 +7,11 @@ export class VisualizerManager {
 		this.currentVisualizer = null;
 		this.animationFrameId = null;
 		this.colors = {
-			blue: 'hsla(195, 100%, 50%, 1)',
-			dullBlue: 'hsla(195, 45%, 45%, 0.7)',
-			pink: 'hsla(320, 100%, 55%, 1)',
-			dullPink: 'hsla(320, 45%, 50%, 0.7)',
-			yellow: 'hsla(45, 100%, 50%, 1)',
+			primary: 'hsla(195, 100%, 50%, 1)',
+			mutedPrimary: 'hsla(195, 45%, 45%, 0.7)',
+			secondary: 'hsla(320, 100%, 55%, 1)',
+			mutedSecondary: 'hsla(320, 45%, 50%, 0.7)',
+			accent: 'hsla(45, 100%, 50%, 1)',
 			transparent: 'hsla(0, 0%, 0%, 0)',
 			...options.colors
 		};
