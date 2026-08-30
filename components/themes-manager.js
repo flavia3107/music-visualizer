@@ -32,26 +32,32 @@ export class ThemeManager {
 		const itemsHTML = THEME_CONFIG.map(theme => {
 			const isActive = theme.id === this.activeThemeId;
 
-			// 1. Generate gradient string for the active border & theme indicator
 			let borderGradient = '';
 			let circleStyle = '';
+			let glowColor1 = '';
+			let glowColor2 = '';
 
 			if (theme.isRandom) {
-				// Full rainbow conic gradient for active border and circle
-				const rainbowGradient = `conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)`;
+				const rainbowGradient = `conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #5ebdff, #c87dff, #9400d3, #ff0097)`;
 				borderGradient = rainbowGradient;
 				circleStyle = `background: ${rainbowGradient};`;
+				glowColor1 = '#00ffff';
+				glowColor2 = '#ff00ff';
 			} else {
-				// Split 50/50 gradient between color 1 and color 2
-				const splitGradient = `linear-gradient(90deg, ${theme.uiColors[0]} 50%, ${theme.uiColors[1]} 50%)`;
-				borderGradient = splitGradient;
-				circleStyle = `background: ${splitGradient};`;
+				// SMOOTH GRADIENT (No 50% hard stops)
+				const smoothGradient = `linear-gradient(135deg, ${theme.uiColors[0]}, ${theme.uiColors[1]})`;
+				borderGradient = smoothGradient;
+				circleStyle = `background: ${smoothGradient};`;
+				glowColor1 = theme.uiColors[0];
+				glowColor2 = theme.uiColors[1];
 			}
 
 			return `
 				<div class="theme-item element ${isActive ? 'active' : ''}" 
 					 data-theme-id="${theme.id}"
-					 style="--theme-border-gradient: ${borderGradient};">
+					 style="--theme-border-gradient: ${borderGradient}; 
+							--glow-color-1: ${glowColor1}; 
+							--glow-color-2: ${glowColor2};">
 					<div class="theme-info">
 						<span class="theme-name">${theme.name}</span>
 						<span class="theme-status">${isActive ? 'Active' : ''}</span>
@@ -63,7 +69,6 @@ export class ThemeManager {
 
 		this.container.innerHTML = headingHTML + itemsHTML;
 	}
-
 	init() {
 		if (!this.container) return;
 
