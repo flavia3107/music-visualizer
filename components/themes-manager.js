@@ -26,17 +26,32 @@ export class ThemeManager {
 	renderThemes() {
 		if (!this.container) return;
 
+		const heading = this.container.querySelector('h2');
+		const headingHTML = heading ? heading.outerHTML : '<h2>Color Themes</h2>';
+
 		const itemsHTML = THEME_CONFIG.map(theme => {
 			const isActive = theme.id === this.activeThemeId;
+
+			// 1. Generate gradient string for the active border & theme indicator
+			let borderGradient = '';
 			let circleStyle = '';
+
 			if (theme.isRandom) {
-				circleStyle = `background: conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000);`;
+				// Full rainbow conic gradient for active border and circle
+				const rainbowGradient = `conic-gradient(#ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)`;
+				borderGradient = rainbowGradient;
+				circleStyle = `background: ${rainbowGradient};`;
 			} else {
-				circleStyle = `background: linear-gradient(90deg, ${theme.uiColors[0]} 50%, ${theme.uiColors[1]} 50%);`;
+				// Split 50/50 gradient between color 1 and color 2
+				const splitGradient = `linear-gradient(90deg, ${theme.uiColors[0]} 50%, ${theme.uiColors[1]} 50%)`;
+				borderGradient = splitGradient;
+				circleStyle = `background: ${splitGradient};`;
 			}
 
 			return `
-				<div class="theme-item element ${isActive ? 'active' : ''}" data-theme-id="${theme.id}">
+				<div class="theme-item element ${isActive ? 'active' : ''}" 
+					 data-theme-id="${theme.id}"
+					 style="--theme-border-gradient: ${borderGradient};">
 					<div class="theme-info">
 						<span class="theme-name">${theme.name}</span>
 						<span class="theme-status">${isActive ? 'Active' : ''}</span>
@@ -45,13 +60,16 @@ export class ThemeManager {
 				</div>
 			`;
 		}).join('');
-		this.container.innerHTML += itemsHTML;
+
+		this.container.innerHTML = headingHTML + itemsHTML;
 	}
 
 	init() {
 		if (!this.container) return;
 
 		this.renderThemes();
+
+		// Event listener attached to parent container (delegates click to whole .theme-item div)
 		this.container.addEventListener('click', (event) => {
 			const item = event.target.closest('.theme-item');
 			if (!item) return;
@@ -61,14 +79,27 @@ export class ThemeManager {
 
 			if (!themeObj) return;
 
-			this.container.querySelectorAll('.theme-item').forEach(el => el.classList.remove('active'));
+			// Reset active state & status text across all items
+			this.container.querySelectorAll('.theme-item').forEach(el => {
+				el.classList.remove('active');
+				const statusEl = el.querySelector('.theme-status');
+				if (statusEl) statusEl.textContent = '';
+			});
+
+			// Activate clicked item
 			item.classList.add('active');
+			const activeStatusEl = item.querySelector('.theme-status');
+			if (activeStatusEl) activeStatusEl.textContent = 'Active';
+
 			this.activeThemeId = themeId;
 
+			// Apply theme palette to visualizer
 			if (themeObj.isRandom) {
 				const randomPalette = this.generateRandomPalette();
 				this.visualizerManager.setPalette(randomPalette);
-			} else if (themeObj.palette) this.visualizerManager.setPalette(themeObj.palette);
+			} else if (themeObj.palette) {
+				this.visualizerManager.setPalette(themeObj.palette);
+			}
 		});
 	}
 }
