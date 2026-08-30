@@ -44,7 +44,6 @@ export class ThemeManager {
 				glowColor1 = '#00ffff';
 				glowColor2 = '#ff00ff';
 			} else {
-				// SMOOTH GRADIENT (No 50% hard stops)
 				const smoothGradient = `linear-gradient(135deg, ${theme.uiColors[0]}, ${theme.uiColors[1]})`;
 				borderGradient = smoothGradient;
 				circleStyle = `background: ${smoothGradient};`;
@@ -53,12 +52,12 @@ export class ThemeManager {
 			}
 
 			return `
-				<div class="theme-item element ${isActive ? 'active' : ''}" 
+				<div class="theme-item element flex-row space-between middle ${isActive ? 'active' : ''}" 
 					 data-theme-id="${theme.id}"
 					 style="--theme-border-gradient: ${borderGradient}; 
 							--glow-color-1: ${glowColor1}; 
 							--glow-color-2: ${glowColor2};">
-					<div class="theme-info">
+					<div class="theme-info flex-column">
 						<span class="theme-name">${theme.name}</span>
 						<span class="theme-status">${isActive ? 'Active' : ''}</span>
 					</div>
@@ -73,8 +72,6 @@ export class ThemeManager {
 		if (!this.container) return;
 
 		this.renderThemes();
-
-		// Event listener attached to parent container (delegates click to whole .theme-item div)
 		this.container.addEventListener('click', (event) => {
 			const item = event.target.closest('.theme-item');
 			if (!item) return;
@@ -84,21 +81,17 @@ export class ThemeManager {
 
 			if (!themeObj) return;
 
-			// Reset active state & status text across all items
 			this.container.querySelectorAll('.theme-item').forEach(el => {
 				el.classList.remove('active');
 				const statusEl = el.querySelector('.theme-status');
 				if (statusEl) statusEl.textContent = '';
 			});
 
-			// Activate clicked item
 			item.classList.add('active');
 			const activeStatusEl = item.querySelector('.theme-status');
 			if (activeStatusEl) activeStatusEl.textContent = 'Active';
 
 			this.activeThemeId = themeId;
-
-			// Apply theme palette to visualizer
 			if (themeObj.isRandom) {
 				const randomPalette = this.generateRandomPalette();
 				this.visualizerManager.setPalette(randomPalette);
