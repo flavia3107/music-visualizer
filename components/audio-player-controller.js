@@ -1,3 +1,5 @@
+import { PLAYER_CONTROLS_CONFIG } from '../config/audio-controls.js';
+
 const formatTime = (seconds) => {
 	if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
 	const mins = Math.floor(seconds / 60);
@@ -31,9 +33,26 @@ export class AudioPlayerController {
 		this.isSeeking = false;
 		this.lastVolume = this.audio.volume || 1;
 
+		// Render controls before resolving elements and binding events
+		this.renderControls();
 		this._resolveElements();
 		this._bindEvents();
 		this.syncUI();
+	}
+
+	renderControls() {
+		this.container.innerHTML = PLAYER_CONTROLS_CONFIG.map(item => {
+			const isPlayPause = item.type === 'stateful';
+			const initialIcon = isPlayPause ? item.icons.paused : item.icon;
+			const initialLabel = isPlayPause ? item.labels.paused : item.label;
+			const extraClass = item.className ? ` ${item.className}` : '';
+
+			return `
+                <button class="action-btn${extraClass}" data-action="${item.action}" aria-label="${initialLabel}">
+                    <span class="material-symbols-outlined">${initialIcon}</span>
+                </button>
+            `;
+		}).join('');
 	}
 
 	_resolveElements() {
@@ -46,10 +65,10 @@ export class AudioPlayerController {
 			volumeIcon: root.querySelector('.volume-control .volume-icon'),
 			volumeValue: root.querySelector('.volume-control .volume-value'),
 			muteBtn: root.querySelector('.volume-control .mute-btn'),
-			playBtnIcon: this.container.querySelector('[aria-label*="Play"] .material-symbols-outlined, [data-action="play-pause"] .material-symbols-outlined')
+			playBtn: this.container.querySelector('[data-action="play-pause"]'),
+			playBtnIcon: this.container.querySelector('[data-action="play-pause"] .material-symbols-outlined')
 		};
 	}
-
 
 	updateVolumeUI = () => {
 		const currentVol = this.audio.muted ? 0 : this.audio.volume;
@@ -79,8 +98,14 @@ export class AudioPlayerController {
 	};
 
 	updatePlaybackState = () => {
-		if (this.elements.playBtnIcon) {
-			this.elements.playBtnIcon.textContent = this.audio.paused ? 'play_arrow' : 'pause';
+		const isPaused = this.audio.paused;
+		const playConfig = PLAYER_CONTROLS_CONFIG.find(c => c.action === 'play-pause');
+
+		if (this.elements.playBtnIcon && playConfig) {
+			this.elements.playBtnIcon.textContent = isPaused ? playConfig.icons.paused : playConfig.icons.playing;
+		}
+		if (this.elements.playBtn && playConfig) {
+			this.elements.playBtn.setAttribute('aria-label', isPaused ? playConfig.labels.paused : playConfig.labels.playing);
 		}
 	};
 
@@ -155,7 +180,7 @@ export class AudioPlayerController {
 		const btn = e.target.closest('.action-btn');
 		if (!btn) return;
 
-		const action = btn.dataset.action || btn.querySelector('.material-symbols-outlined')?.textContent.trim();
+		const action = btn.dataset.action;
 		switch (action) {
 			case 'play-pause':
 				if (window.audioCtx?.state === 'suspended') window.audioCtx.resume();
