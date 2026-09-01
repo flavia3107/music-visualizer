@@ -1,5 +1,4 @@
 import { PLAYER_CONTROLS_CONFIG } from '../config/audio-controls.js';
-
 const formatTime = (seconds) => {
 	if (!Number.isFinite(seconds) || seconds < 0) return '00:00';
 	const mins = Math.floor(seconds / 60);
@@ -32,27 +31,62 @@ export class AudioPlayerController {
 		this.isShuffle = false;
 		this.isSeeking = false;
 		this.lastVolume = this.audio.volume || 1;
+		this.controlBindings = [];
 
-		// Render controls before resolving elements and binding events
 		this.renderControls();
 		this._resolveElements();
 		this._bindEvents();
 		this.syncUI();
 	}
 
+	getActionHandler(action) {
+		const handlers = {
+			'play-pause': () => {
+				if (window.audioCtx?.state === 'suspended') window.audioCtx.resume();
+				this.audio.paused ? this.audio.play() : this.audio.pause();
+			},
+			'prev': () => this.handlePrevTrack(),
+			'next': () => this.navigateTrack('next'),
+			'shuffle': (e) => {
+				this.isShuffle = !this.isShuffle;
+				e.currentTarget.classList.toggle('active', this.isShuffle);
+			},
+			'repeat': (e) => {
+				this.audio.loop = !this.audio.loop;
+				e.currentTarget.classList.toggle('active', this.audio.loop);
+			}
+		};
+
+		return handlers[action] || null;
+	}
+
 	renderControls() {
-		this.container.innerHTML = PLAYER_CONTROLS_CONFIG.map(item => {
+		this.container.innerHTML = '';
+		this.controlBindings = [];
+
+		PLAYER_CONTROLS_CONFIG.forEach(item => {
+			const btn = document.createElement('button');
+			btn.className = `action-btn${item.className ? ` ${item.className}` : ''}`;
+			btn.dataset.action = item.action;
+
 			const isPlayPause = item.type === 'stateful';
 			const initialIcon = isPlayPause ? item.icons.paused : item.icon;
 			const initialLabel = isPlayPause ? item.labels.paused : item.label;
-			const extraClass = item.className ? ` ${item.className}` : '';
+			btn.setAttribute('aria-label', initialLabel);
 
-			return `
-                <button class="action-btn${extraClass}" data-action="${item.action}" aria-label="${initialLabel}">
-                    <span class="material-symbols-outlined">${initialIcon}</span>
-                </button>
-            `;
-		}).join('');
+			const iconSpan = document.createElement('span');
+			iconSpan.className = 'material-symbols-outlined';
+			iconSpan.textContent = initialIcon;
+			btn.appendChild(iconSpan);
+
+			const handler = this.getActionHandler(item.action);
+			if (handler) {
+				btn.addEventListener('click', handler);
+				this.controlBindings.push([btn, 'click', handler]);
+			}
+
+			this.container.appendChild(btn);
+		});
 	}
 
 	_resolveElements() {
@@ -176,40 +210,8 @@ export class AudioPlayerController {
 		this.updateVolumeUI();
 	};
 
-	handleActionClick = (e) => {
-		const btn = e.target.closest('.action-btn');
-		if (!btn) return;
-
-		const action = btn.dataset.action;
-		switch (action) {
-			case 'play-pause':
-				if (window.audioCtx?.state === 'suspended') window.audioCtx.resume();
-				this.audio.paused ? this.audio.play() : this.audio.pause();
-				break;
-
-			case 'prev':
-				this.handlePrevTrack();
-				break;
-
-			case 'next':
-				this.navigateTrack('next');
-				break;
-
-			case 'shuffle':
-				this.isShuffle = !this.isShuffle;
-				btn.classList.toggle('active', this.isShuffle);
-				break;
-
-			case 'repeat':
-				this.audio.loop = !this.audio.loop;
-				btn.classList.toggle('active', this.audio.loop);
-				break;
-		}
-	};
-
 	_bindEvents() {
 		this.bindings = [
-			[this.container, 'click', this.handleActionClick],
 			[this.audio, 'play', this.updatePlaybackState],
 			[this.audio, 'pause', this.updatePlaybackState],
 			[this.audio, 'timeupdate', this.updateProgressUI],
@@ -226,5 +228,6 @@ export class AudioPlayerController {
 
 	destroy() {
 		this.bindings.forEach(([target, event, handler]) => target?.removeEventListener(event, handler));
+		this.controlBindings.forEach(([target, event, handler]) => target?.removeEventListener(event, handler));
 	}
 }
