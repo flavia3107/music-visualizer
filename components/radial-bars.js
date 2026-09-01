@@ -3,7 +3,7 @@ import { RING_GRADIENT_STOPS } from '../config/visualizers.js'
 
 export class RadialBarsVisualizer {
 	constructor() {
-		this.config = { barCount: 160, minBarHeight: 2, minRenderHeight: 5 };
+		this.config = { barCount: 160, minBarHeight: 3, minRenderHeight: 0 };
 		this.RING_SPACING_FACTORS = [0.18, 0.24, 0.38, 0.50, 0.64, 0.74, 0.84, 0.95];
 		this.particles = [];
 		this.smoothedHeights = new Float32Array(this.config.barCount);
@@ -26,13 +26,15 @@ export class RadialBarsVisualizer {
 		const inputLen = inputData.length;
 		const rawBands = new Float32Array(targetLength);
 		const spatialBands = new Float32Array(targetLength);
+		const quadrantBars = targetLength / 4;
 
 		for (let i = 0; i < targetLength; i++) {
-			const angle = (i / targetLength) * Math.PI * 2;
-			const u = Math.abs(Math.sin(angle));
-			const fftIdx = Math.floor(Math.pow(u, 1.1) * (inputLen * 0.45));
+			const quadPos = i % quadrantBars;
+			const symIndex = quadPos < (quadrantBars / 2) ? quadPos : quadrantBars - quadPos;
+			const normIndex = symIndex / (quadrantBars / 2);
+			const fftIdx = Math.floor(Math.pow(normIndex, 0.85) * (inputLen * 0.35));
 			const rawVal = (inputData[fftIdx] || 0) / 255;
-			const contrastVal = Math.pow(rawVal, 2.0) * 1.4 * (0.65 + 0.35 * u);
+			const contrastVal = Math.pow(rawVal, 1.6) * 1.2;
 			rawBands[i] = Math.min(1.0, contrastVal);
 		}
 
@@ -68,7 +70,7 @@ export class RadialBarsVisualizer {
 	_getPureBarColor(angle, palette) {
 		const cosVal = Math.cos(angle);
 		const sinVal = Math.sin(angle);
-		if (Math.abs(sinVal) > 0.82) return palette.secondary;
+		if (Math.abs(sinVal) > 0.7) return palette.secondary;
 		return cosVal < 0 ? palette.primary : palette.accent;
 	}
 
@@ -135,8 +137,6 @@ export class RadialBarsVisualizer {
 			const normVal = audioData[i] / 255;
 			const barHeight = dynamicMinBarHeight + normVal * dynamicMaxBarHeight;
 
-			if (isAudioActive && barHeight < this.config.minRenderHeight) continue;
-
 			const angle = (i / this.config.barCount) * Math.PI * 2;
 			const cos = Math.cos(angle);
 			const sin = Math.sin(angle);
@@ -158,7 +158,8 @@ export class RadialBarsVisualizer {
 			ctx.stroke();
 			ctx.restore();
 
-			if (isAudioActive && normVal > 0.58 && Math.random() < 0.30) this.particles.push(new Particle(endX, endY, angle, color));
+			if (isAudioActive && normVal > 0.58 && Math.random() < 0.30)
+				this.particles.push(new Particle(endX, endY, angle, color));
 		}
 
 		for (let i = this.particles.length - 1; i >= 0; i--) {
