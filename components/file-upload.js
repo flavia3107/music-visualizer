@@ -89,7 +89,7 @@ function updatePlaylistUI() {
 	const historyTracks = uploadedFiles.slice(0, -1).reverse();
 
 	if (!historyTracks.length) {
-		playlistContainer.innerHTML = `<div class="track flex-row space-between element">No previous tracks</div>`;
+		playlistContainer.innerHTML = `<div class="track flex-row space-between">No previous tracks</div>`;
 		return;
 	}
 
