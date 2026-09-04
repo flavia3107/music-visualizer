@@ -24,6 +24,11 @@
 	animation: marquee 20s linear infinite;
 }
 
+.empty-placeholder {
+	font-size: 1.5rem;
+	opacity: 0.5;
+}
+
 @keyframes marquee {
 	0% {
 		transform: translateX(0%);

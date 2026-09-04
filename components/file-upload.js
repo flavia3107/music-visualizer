@@ -90,7 +90,7 @@ function updatePlaylistUI() {
 
 	if (!historyTracks.length) {
 		playlistContainer.classList.add('flex-row', 'center', 'middle');
-		playlistContainer.innerHTML = `<div class="track ">No previous tracks</div>`;
+		playlistContainer.innerHTML = `<div class="empty-placeholder">No previous tracks</div>`;
 		return;
 	}
 
