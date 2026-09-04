@@ -89,11 +89,13 @@ function updatePlaylistUI() {
 	const historyTracks = uploadedFiles.slice(0, -1).reverse();
 
 	if (!historyTracks.length) {
-		playlistContainer.innerHTML = `<div class="track flex-row space-between">No previous tracks</div>`;
+		playlistContainer.classList.add('flex-row', 'center', 'middle');
+		playlistContainer.innerHTML = `<div class="track ">No previous tracks</div>`;
 		return;
 	}
 
 	playlistContainer.innerHTML = '';
+	playlistContainer.classList.remove('flex-row', 'center', 'middle');
 	historyTracks.forEach(track => {
 		const isActive = track.id === currentTrackId;
 		const isPlaying = isActive && !audioElement.paused && !audioElement.ended;
