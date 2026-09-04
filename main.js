@@ -1,6 +1,6 @@
 import { VisualizerManager } from './components/visualizer-manager.js';
 import { RadialBarsVisualizer } from './components/radial-bars.js';
-// import { WaveformCurveVisualizer } from './components/waveform.js';
+import { WaveformCurveVisualizer } from './components/waveform.js';
 import { ThemeManager } from './components/themes-manager.js';
 import { AudioPlayerController } from './components/audio-player-controller.js';
 import { PartyMode } from './components/full-screen.js';
@@ -18,7 +18,7 @@ import { THEME_CONFIG } from './config/themes.js';
 const CONTROLLER_CONFIG = { getTracks: () => uploadedFiles, getCurrentTrackId, playTrack };
 const visualizers = {
    'Radial Bars': new RadialBarsVisualizer(),
-   // 'Waveform Curve': new WaveformCurveVisualizer()
+   'Waveform Curve': new WaveformCurveVisualizer()
 };
 
 const manager = new VisualizerManager('mainCanvas', getAudioData, { colors: THEME_CONFIG[0].palette });

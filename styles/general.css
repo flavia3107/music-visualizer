@@ -77,7 +77,8 @@ h2 {
 	width: 85%;
 }
 
-input:focus-visible {
+input:focus-visible,
+a:focus-visible {
 	outline: none;
 	cursor: auto;
 }
