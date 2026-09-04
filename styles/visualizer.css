@@ -9,10 +9,11 @@
 	margin-bottom: 1.5rem;
 }
 
-/* .theme-container {
-	padding-top: 1rem;
-	border-top: 1px solid #4e4e4e;
-} */
+.theme-container {
+	padding-bottom: 1rem;
+	border-bottom: 1px solid #ffffff14;
+	margin-bottom: 1rem;
+}
 
 .mode-item {
 	flex: 1 1 calc(50% - 5px);
