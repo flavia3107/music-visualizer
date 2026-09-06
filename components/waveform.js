@@ -1,26 +1,22 @@
 export class WaveformCurveVisualizer {
 	constructor() {
 		this.phase = 0;
-
-		// Neon Colors
-		this.NEON_BLUE = 'rgb(0, 230, 255)';
-		this.NEON_PINK = 'rgb(255, 0, 180)';
-		this.NEON_PURPLE = 'rgb(170, 0, 255)';
-
-		this.FILL_BLUE = 'rgba(0, 230, 255, 0.25)';
-		this.FILL_PINK = 'rgba(255, 0, 180, 0.25)';
-		this.FILL_PURPLE = 'rgba(170, 0, 255, 0.25)';
 	}
 
-	draw(ctx, rect) {
-		const width = rect.width;
-		const height = rect.height;
-		const centerY = height / 2;
+	draw(ctx, data = new Uint8Array(0), bounds = {}, colors = {}) {
+		if (!ctx || !bounds.width || !bounds.height) return;
 
+		const { width, height, centerY = height / 2 } = bounds;
+		const primary = colors.primary || 'hsla(195, 100%, 50%, 1)';
+		const secondary = colors.secondary || 'hsla(320, 100%, 55%, 1)';
+		const accent = colors.accent || 'hsla(45, 100%, 50%, 1)';
+		const mutedPrimary = colors.mutedPrimary || 'hsla(195, 45%, 45%, 0.25)';
+		const mutedSecondary = colors.mutedSecondary || 'hsla(320, 45%, 50%, 0.25)';
+
+		ctx.save();
 		ctx.clearRect(0, 0, width, height);
 		ctx.globalCompositeOperation = 'lighter';
 
-		// 1. Center Axis
 		ctx.beginPath();
 		ctx.moveTo(0, centerY);
 		ctx.lineTo(width, centerY);
@@ -30,23 +26,25 @@ export class WaveformCurveVisualizer {
 		ctx.stroke();
 		ctx.setLineDash([]);
 
-		// 2. Gradients
 		const strokeGradient = ctx.createLinearGradient(0, 0, width, 0);
-		strokeGradient.addColorStop(0.0, this.NEON_BLUE);
-		strokeGradient.addColorStop(0.46, this.NEON_BLUE);
-		strokeGradient.addColorStop(0.50, this.NEON_PURPLE);
-		strokeGradient.addColorStop(0.54, this.NEON_PINK);
-		strokeGradient.addColorStop(1.0, this.NEON_PINK);
+		strokeGradient.addColorStop(0.0, primary);
+		strokeGradient.addColorStop(0.5, accent);
+		strokeGradient.addColorStop(1.0, secondary);
 
 		const fillGradient = ctx.createLinearGradient(0, 0, width, 0);
-		fillGradient.addColorStop(0.0, this.FILL_BLUE);
-		fillGradient.addColorStop(0.46, this.FILL_BLUE);
-		fillGradient.addColorStop(0.50, this.FILL_PURPLE);
-		fillGradient.addColorStop(0.54, this.FILL_PINK);
-		fillGradient.addColorStop(1.0, this.FILL_PINK);
+		fillGradient.addColorStop(0.0, mutedPrimary);
+		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+		fillGradient.addColorStop(1.0, mutedSecondary);
 
-		this.phase += 0.03;
-		const amplitude = height * 0.35;
+		let audioEnergy = 0;
+		if (data.length > 0) {
+			const sum = data.reduce((acc, val) => acc + val, 0);
+			audioEnergy = (sum / data.length) / 255; // Normalized (0.0 to 1.0)
+		}
+
+		this.phase += 0.02 + audioEnergy * 0.04;
+		const baseAmplitude = height * 0.15;
+		const dynamicAmplitude = baseAmplitude + (height * 0.25 * audioEnergy);
 		const frequency = 2.5;
 		const points = 200;
 		const step = width / (points - 1);
@@ -57,11 +55,14 @@ export class WaveformCurveVisualizer {
 			const x = i * step;
 			const normalizedX = i / (points - 1);
 
+			const dataIndex = Math.floor(normalizedX * (data.length || 1));
+			const pointAudioFactor = data.length > 0 ? (data[dataIndex] / 255) : 0.5;
+
 			const sinPart = Math.sin(normalizedX * Math.PI * 2 * frequency + this.phase);
 			const cosPart = Math.cos(normalizedX * Math.PI * frequency - this.phase * 0.5) * 0.3;
-			const envelope = Math.sin(normalizedX * Math.PI);
+			const envelope = Math.sin(normalizedX * Math.PI); // Smooth tapering at canvas edges
 
-			const y = centerY + (sinPart + cosPart) * amplitude * envelope;
+			const y = centerY + (sinPart + cosPart) * dynamicAmplitude * envelope * (0.6 + pointAudioFactor * 0.8);
 			wavePoints.push({ x, y });
 		}
 
@@ -75,7 +76,7 @@ export class WaveformCurveVisualizer {
 			}
 		};
 
-		// 3. Translucent Area Fill
+		// 4. Translucent Fill Area
 		ctx.save();
 		ctx.beginPath();
 		ctx.moveTo(wavePoints[0].x, centerY);
@@ -90,26 +91,26 @@ export class WaveformCurveVisualizer {
 		ctx.fill();
 		ctx.restore();
 
-		// 4. Glow Pass
+		// 5. Glow Pass
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
 		ctx.lineWidth = 3;
-		ctx.shadowColor = this.NEON_PINK;
-		ctx.shadowBlur = 18;
+		ctx.shadowColor = secondary;
+		ctx.shadowBlur = 12 + audioEnergy * 10;
 		ctx.stroke();
 		ctx.restore();
 
-		// 5. Crisp Core Line
+		// 6. Crisp Core Line
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
 		ctx.lineWidth = 1.2;
-		ctx.shadowColor = this.NEON_BLUE;
-		ctx.shadowBlur = 6;
+		ctx.shadowColor = primary;
+		ctx.shadowBlur = 4;
 		ctx.stroke();
 		ctx.restore();
 
-		ctx.globalCompositeOperation = 'source-over';
+		ctx.restore();
 	}
 }
