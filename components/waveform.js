@@ -36,15 +36,17 @@ export class WaveformCurveVisualizer {
 		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
 		fillGradient.addColorStop(1.0, mutedSecondary);
 
+		const hasData = data && data.length > 0;
 		let audioEnergy = 0;
-		if (data.length > 0) {
+
+		if (hasData) {
 			const sum = data.reduce((acc, val) => acc + val, 0);
-			audioEnergy = (sum / data.length) / 255; // Normalized (0.0 to 1.0)
+			audioEnergy = (sum / data.length) / 255;
 		}
 
-		this.phase += 0.02 + audioEnergy * 0.04;
-		const baseAmplitude = height * 0.15;
-		const dynamicAmplitude = baseAmplitude + (height * 0.25 * audioEnergy);
+		this.phase += hasData ? 0.02 + audioEnergy * 0.04 : 0;
+
+		const dynamicAmplitude = height * 0.35 * audioEnergy;
 		const frequency = 2.5;
 		const points = 200;
 		const step = width / (points - 1);
@@ -54,15 +56,12 @@ export class WaveformCurveVisualizer {
 		for (let i = 0; i < points; i++) {
 			const x = i * step;
 			const normalizedX = i / (points - 1);
-
-			const dataIndex = Math.floor(normalizedX * (data.length || 1));
-			const pointAudioFactor = data.length > 0 ? (data[dataIndex] / 255) : 0.5;
-
+			const dataIndex = Math.floor(normalizedX * (data.length - 1));
+			const pointAudioFactor = hasData ? (data[dataIndex] / 255) : 0;
 			const sinPart = Math.sin(normalizedX * Math.PI * 2 * frequency + this.phase);
 			const cosPart = Math.cos(normalizedX * Math.PI * frequency - this.phase * 0.5) * 0.3;
-			const envelope = Math.sin(normalizedX * Math.PI); // Smooth tapering at canvas edges
-
-			const y = centerY + (sinPart + cosPart) * dynamicAmplitude * envelope * (0.6 + pointAudioFactor * 0.8);
+			const envelope = Math.sin(normalizedX * Math.PI); // Envelope to taper ends gracefully
+			const y = centerY + (sinPart + cosPart) * dynamicAmplitude * envelope * pointAudioFactor;
 			wavePoints.push({ x, y });
 		}
 
@@ -76,7 +75,6 @@ export class WaveformCurveVisualizer {
 			}
 		};
 
-		// 4. Translucent Fill Area
 		ctx.save();
 		ctx.beginPath();
 		ctx.moveTo(wavePoints[0].x, centerY);
@@ -91,7 +89,6 @@ export class WaveformCurveVisualizer {
 		ctx.fill();
 		ctx.restore();
 
-		// 5. Glow Pass
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
@@ -101,7 +98,6 @@ export class WaveformCurveVisualizer {
 		ctx.stroke();
 		ctx.restore();
 
-		// 6. Crisp Core Line
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
