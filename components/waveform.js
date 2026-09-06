@@ -7,6 +7,8 @@ export class WaveformCurveVisualizer {
 		if (!ctx || !bounds.width || !bounds.height) return;
 
 		const { width, height, centerY = height / 2 } = bounds;
+
+		// Resolve dynamic palette colors with fallbacks
 		const primary = colors.primary || 'hsla(195, 100%, 50%, 1)';
 		const secondary = colors.secondary || 'hsla(320, 100%, 55%, 1)';
 		const accent = colors.accent || 'hsla(45, 100%, 50%, 1)';
@@ -17,6 +19,7 @@ export class WaveformCurveVisualizer {
 		ctx.clearRect(0, 0, width, height);
 		ctx.globalCompositeOperation = 'lighter';
 
+		// 1. Center Axis Line
 		ctx.beginPath();
 		ctx.moveTo(0, centerY);
 		ctx.lineTo(width, centerY);
@@ -26,6 +29,7 @@ export class WaveformCurveVisualizer {
 		ctx.stroke();
 		ctx.setLineDash([]);
 
+		// 2. Gradients
 		const strokeGradient = ctx.createLinearGradient(0, 0, width, 0);
 		strokeGradient.addColorStop(0.0, primary);
 		strokeGradient.addColorStop(0.5, accent);
@@ -36,32 +40,58 @@ export class WaveformCurveVisualizer {
 		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
 		fillGradient.addColorStop(1.0, mutedSecondary);
 
+		// 3. Audio Energy & Active Range Calculation
 		const hasData = data && data.length > 0;
 		let audioEnergy = 0;
 
-		if (hasData) {
-			const sum = data.reduce((acc, val) => acc + val, 0);
-			audioEnergy = (sum / data.length) / 255;
+		// Use the lower ~65% of frequency bins where audible music lives
+		const activeBins = hasData ? Math.floor(data.length * 0.65) : 0;
+
+		if (hasData && activeBins > 0) {
+			let sum = 0;
+			for (let i = 0; i < activeBins; i++) sum += data[i];
+			audioEnergy = (sum / activeBins) / 255;
 		}
 
-		this.phase += hasData ? 0.02 + audioEnergy * 0.04 : 0;
+		this.phase += hasData ? 0.02 + audioEnergy * 0.03 : 0;
 
-		const dynamicAmplitude = height * 0.35 * audioEnergy;
+		const baseAmplitude = height * 0.25;
+		const dynamicAmplitude = baseAmplitude * (0.3 + audioEnergy * 0.7);
 		const frequency = 2.5;
 		const points = 200;
 		const step = width / (points - 1);
 
 		const wavePoints = [];
 
+		// Helper function to sample audio value across symmetrical map
+		const getAudioSample = (normalizedX) => {
+			if (!hasData || activeBins === 0) return 0.2;
+
+			// Mirror index from center (0 -> 1 -> 0) so both left & right edges stay dynamic
+			const mirroredX = 1 - Math.abs(normalizedX * 2 - 1);
+			const floatIndex = mirroredX * (activeBins - 1);
+
+			const indexLower = Math.floor(floatIndex);
+			const indexUpper = Math.min(indexLower + 1, activeBins - 1);
+			const fraction = floatIndex - indexLower;
+
+			// Interpolate smoothly between adjacent frequency bins
+			const valLower = data[indexLower] / 255;
+			const valUpper = data[indexUpper] / 255;
+			return valLower + (valUpper - valLower) * fraction;
+		};
+
 		for (let i = 0; i < points; i++) {
 			const x = i * step;
 			const normalizedX = i / (points - 1);
-			const dataIndex = Math.floor(normalizedX * (data.length - 1));
-			const pointAudioFactor = hasData ? (data[dataIndex] / 255) : 0;
+
+			const pointAudioFactor = getAudioSample(normalizedX);
+
 			const sinPart = Math.sin(normalizedX * Math.PI * 2 * frequency + this.phase);
-			const cosPart = Math.cos(normalizedX * Math.PI * frequency - this.phase * 0.5) * 0.3;
-			const envelope = Math.sin(normalizedX * Math.PI); // Envelope to taper ends gracefully
-			const y = centerY + (sinPart + cosPart) * dynamicAmplitude * envelope * pointAudioFactor;
+			const cosPart = Math.cos(normalizedX * Math.PI * frequency - this.phase * 0.5) * 0.35;
+			const envelope = Math.sin(normalizedX * Math.PI); // Smooth edge tapering
+
+			const y = centerY + (sinPart + cosPart) * dynamicAmplitude * envelope * (0.4 + pointAudioFactor * 0.8);
 			wavePoints.push({ x, y });
 		}
 
@@ -75,6 +105,7 @@ export class WaveformCurveVisualizer {
 			}
 		};
 
+		// 4. Translucent Area Fill
 		ctx.save();
 		ctx.beginPath();
 		ctx.moveTo(wavePoints[0].x, centerY);
@@ -89,6 +120,7 @@ export class WaveformCurveVisualizer {
 		ctx.fill();
 		ctx.restore();
 
+		// 5. Glow Pass
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
@@ -98,6 +130,7 @@ export class WaveformCurveVisualizer {
 		ctx.stroke();
 		ctx.restore();
 
+		// 6. Crisp Core Line
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
