@@ -164,3 +164,5 @@ export class WaveformCurveVisualizer {
 		ctx.restore();
 	}
 }
+// make the line shorter
+// make it more visible the highs and lows
