@@ -40,7 +40,7 @@ export class WaveformCurveVisualizer {
 		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
 		fillGradient.addColorStop(1.0, mutedSecondary);
 
-		// 3. Extract Kick/Bass Energy (Lower ~10% of frequency bins)
+		// 3. Audio Activity Detection
 		const hasData = data && data.length > 0;
 		let targetBass = 0;
 
@@ -53,15 +53,19 @@ export class WaveformCurveVisualizer {
 			targetBass = (bassSum / bassBins) / 255;
 		}
 
-		// Smooth physics interpolation (exponential decay on beats)
+		// Smooth physics decay (exponentially drops to 0 on silence)
 		this.bassEnergy += (targetBass - this.bassEnergy) * 0.2;
 
-		// Drive phase speed and amplitude from beat intensity
-		this.phase += 0.03 + this.bassEnergy * 0.08;
+		// Threshold to ignore noise floor / strict silence check
+		const isPlaying = hasData && this.bassEnergy > 0.01;
 
-		const baseAmplitude = height * 0.05;
-		const beatAmplitude = height * 0.35 * this.bassEnergy;
-		const currentAmplitude = baseAmplitude + beatAmplitude;
+		// Advance phase ONLY when music is actively detected
+		if (isPlaying) {
+			this.phase += 0.02 + this.bassEnergy * 0.08;
+		}
+
+		// Pure flat line when no music, dynamic amplitude when playing
+		const currentAmplitude = isPlaying ? height * 0.35 * this.bassEnergy : 0;
 
 		const points = 150;
 		const step = width / (points - 1);
@@ -71,15 +75,17 @@ export class WaveformCurveVisualizer {
 			const x = i * step;
 			const normalizedX = i / (points - 1);
 
-			// Layer multiple harmonically linked sines for a natural, fluid curve
-			const sin1 = Math.sin(normalizedX * Math.PI * 3 + this.phase);
-			const sin2 = Math.sin(normalizedX * Math.PI * 6 - this.phase * 1.4) * 0.3;
-			const sin3 = Math.cos(normalizedX * Math.PI * 1.5 + this.phase * 0.7) * 0.2;
+			if (currentAmplitude > 0) {
+				const sin1 = Math.sin(normalizedX * Math.PI * 3 + this.phase);
+				const sin2 = Math.sin(normalizedX * Math.PI * 6 - this.phase * 1.4) * 0.3;
+				const sin3 = Math.cos(normalizedX * Math.PI * 1.5 + this.phase * 0.7) * 0.2;
 
-			const envelope = Math.sin(normalizedX * Math.PI); // Window tapering at edges
-
-			const y = centerY + (sin1 + sin2 + sin3) * currentAmplitude * envelope;
-			wavePoints.push({ x, y });
+				const envelope = Math.sin(normalizedX * Math.PI); // Window tapering at canvas edges
+				const y = centerY + (sin1 + sin2 + sin3) * currentAmplitude * envelope;
+				wavePoints.push({ x, y });
+			} else {
+				wavePoints.push({ x, y: centerY });
+			}
 		}
 
 		const buildWavePath = () => {
@@ -92,20 +98,22 @@ export class WaveformCurveVisualizer {
 			}
 		};
 
-		// 4. Translucent Area Fill
-		ctx.save();
-		ctx.beginPath();
-		ctx.moveTo(wavePoints[0].x, centerY);
-		for (let i = 0; i < wavePoints.length - 1; i++) {
-			const xc = (wavePoints[i].x + wavePoints[i + 1].x) / 2;
-			const yc = (wavePoints[i].y + wavePoints[i + 1].y) / 2;
-			ctx.quadraticCurveTo(wavePoints[i].x, wavePoints[i].y, xc, yc);
+		// 4. Translucent Area Fill (only when active)
+		if (isPlaying) {
+			ctx.save();
+			ctx.beginPath();
+			ctx.moveTo(wavePoints[0].x, centerY);
+			for (let i = 0; i < wavePoints.length - 1; i++) {
+				const xc = (wavePoints[i].x + wavePoints[i + 1].x) / 2;
+				const yc = (wavePoints[i].y + wavePoints[i + 1].y) / 2;
+				ctx.quadraticCurveTo(wavePoints[i].x, wavePoints[i].y, xc, yc);
+			}
+			ctx.lineTo(width, centerY);
+			ctx.closePath();
+			ctx.fillStyle = fillGradient;
+			ctx.fill();
+			ctx.restore();
 		}
-		ctx.lineTo(width, centerY);
-		ctx.closePath();
-		ctx.fillStyle = fillGradient;
-		ctx.fill();
-		ctx.restore();
 
 		// 5. Glow Pass
 		ctx.save();
@@ -113,7 +121,7 @@ export class WaveformCurveVisualizer {
 		ctx.strokeStyle = strokeGradient;
 		ctx.lineWidth = 3;
 		ctx.shadowColor = secondary;
-		ctx.shadowBlur = 10 + this.bassEnergy * 20;
+		ctx.shadowBlur = isPlaying ? 10 + this.bassEnergy * 20 : 0;
 		ctx.stroke();
 		ctx.restore();
 
@@ -123,7 +131,7 @@ export class WaveformCurveVisualizer {
 		ctx.strokeStyle = strokeGradient;
 		ctx.lineWidth = 1.2;
 		ctx.shadowColor = primary;
-		ctx.shadowBlur = 4;
+		ctx.shadowBlur = isPlaying ? 4 : 0;
 		ctx.stroke();
 		ctx.restore();
 
