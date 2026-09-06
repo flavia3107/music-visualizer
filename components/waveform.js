@@ -1,6 +1,6 @@
 export class WaveformCurveVisualizer {
 	constructor() {
-		this.phase = 0;
+		this.smoothedData = new Float32Array(0);
 		this.beatEnergy = 0;
 	}
 
@@ -40,64 +40,78 @@ export class WaveformCurveVisualizer {
 		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
 		fillGradient.addColorStop(1.0, mutedSecondary);
 
-		// 3. Audio & Beat Energy Detection
+		// 3. Audio Processing & Beat Detection
 		const hasData = data && data.length > 0;
+		const numPoints = 80; // Smooth resolution across width
+
+		if (this.smoothedData.length !== numPoints) {
+			this.smoothedData = new Float32Array(numPoints);
+		}
+
 		let instantBass = 0;
 
 		if (hasData) {
-			// Sample kick/bass frequencies (~10% of spectrum)
-			const bassBins = Math.max(1, Math.floor(data.length * 0.1));
+			// Sample lower spectrum for overall beat impact
+			const bassBins = Math.max(1, Math.floor(data.length * 0.15));
 			let bassSum = 0;
-			for (let i = 0; i < bassBins; i++) {
-				bassSum += data[i];
-			}
+			for (let i = 0; i < bassBins; i++) bassSum += data[i];
 			instantBass = (bassSum / bassBins) / 255;
+
+			// Map standard audio frequency spectrum across points
+			const activeBins = Math.floor(data.length * 0.65); // Use audible spectrum
+
+			for (let i = 0; i < numPoints; i++) {
+				const normalizedX = i / (numPoints - 1);
+
+				// Map position to frequency data index
+				const floatIndex = normalizedX * (activeBins - 1);
+				const idxLower = Math.floor(floatIndex);
+				const idxUpper = Math.min(idxLower + 1, activeBins - 1);
+				const frac = floatIndex - idxLower;
+
+				// Interpolate value between adjacent bins
+				const val = (data[idxLower] * (1 - frac) + data[idxUpper] * frac) / 255;
+
+				// Exaggerate peaks exponentially (audio dynamics feel punchier)
+				const targetAmp = Math.pow(val, 1.6);
+
+				// Smooth frame-to-frame jitter (0.35 = fast, snappy response)
+				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * 0.35;
+			}
+		} else {
+			// Decay points smoothly to baseline when stopped/paused
+			for (let i = 0; i < numPoints; i++) {
+				this.smoothedData[i] *= 0.85;
+			}
 		}
 
-		// Fast Attack (instant reaction to beat), Slow Decay (smooth fade out)
+		// Fast-attack beat energy for glow intensity
 		if (instantBass > this.beatEnergy) {
-			this.beatEnergy = instantBass; // Snap immediately to kick drum beat
+			this.beatEnergy = instantBass;
 		} else {
-			this.beatEnergy += (instantBass - this.beatEnergy) * 0.15; // Smooth release
+			this.beatEnergy += (instantBass - this.beatEnergy) * 0.15;
 		}
 
 		const isPlaying = hasData && this.beatEnergy > 0.01;
-
-		// Advance phase dynamically: baseline speed + burst on beats
-		if (isPlaying) {
-			this.phase += 0.02 + this.beatEnergy * 0.06;
-		}
-
-		const points = 120;
-		const step = width / (points - 1);
+		const step = width / (numPoints - 1);
 		const wavePoints = [];
 
-		// Focus frequency sampling on active audible spectrum (lower ~70%)
-		const activeBins = hasData ? Math.floor(data.length * 0.7) : 0;
-
-		for (let i = 0; i < points; i++) {
+		// 4. Generate Peak Wave Points directly from Audio Data
+		for (let i = 0; i < numPoints; i++) {
 			const x = i * step;
-			const normalizedX = i / (points - 1);
+			const normalizedX = i / (numPoints - 1);
 
-			if (isPlaying && activeBins > 0) {
-				// Map position along wave directly to frequency data bin
-				const dataIndex = Math.floor(normalizedX * (activeBins - 1));
-				const frequencyAmp = data[dataIndex] / 255;
+			// Alternating directions (+1, -1, +1, -1) create true crests & troughs
+			const direction = (i % 2 === 0) ? -1 : 1;
 
-				// Taper curve ends gracefully at canvas left/right borders
-				const envelope = Math.sin(normalizedX * Math.PI);
+			// Taper ends gracefully at screen borders
+			const envelope = Math.sin(normalizedX * Math.PI);
 
-				// Single clean sine wave modulated directly by live audio frequency
-				const sineWave = Math.sin(normalizedX * Math.PI * 4 + this.phase);
+			const amp = this.smoothedData[i];
+			const maxAmplitude = height * 0.42;
 
-				// Combine base sine movement with live beat/frequency reaction
-				const displacement = sineWave * (height * 0.35) * (frequencyAmp * 0.7 + this.beatEnergy * 0.3);
-
-				const y = centerY + displacement * envelope;
-				wavePoints.push({ x, y });
-			} else {
-				wavePoints.push({ x, y: centerY });
-			}
+			const y = centerY + (direction * amp * maxAmplitude * envelope);
+			wavePoints.push({ x, y });
 		}
 
 		const buildWavePath = () => {
@@ -110,7 +124,7 @@ export class WaveformCurveVisualizer {
 			}
 		};
 
-		// 4. Translucent Area Fill
+		// 5. Translucent Area Fill
 		if (isPlaying) {
 			ctx.save();
 			ctx.beginPath();
@@ -127,7 +141,7 @@ export class WaveformCurveVisualizer {
 			ctx.restore();
 		}
 
-		// 5. Glow Pass (Pulses intensely on beats)
+		// 6. Glow Pass (Pulsing Blur on Beat)
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
@@ -137,7 +151,7 @@ export class WaveformCurveVisualizer {
 		ctx.stroke();
 		ctx.restore();
 
-		// 6. Crisp Core Line
+		// 7. Crisp Core Line
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
