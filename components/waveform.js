@@ -1,7 +1,7 @@
 export class WaveformCurveVisualizer {
 	constructor() {
 		this.phase = 0;
-		this.bassEnergy = 0;
+		this.beatEnergy = 0;
 	}
 
 	draw(ctx, data = new Uint8Array(0), bounds = {}, colors = {}) {
@@ -40,48 +40,60 @@ export class WaveformCurveVisualizer {
 		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
 		fillGradient.addColorStop(1.0, mutedSecondary);
 
-		// 3. Audio Activity Detection
+		// 3. Audio & Beat Energy Detection
 		const hasData = data && data.length > 0;
-		let targetBass = 0;
+		let instantBass = 0;
 
 		if (hasData) {
-			const bassBins = Math.max(1, Math.floor(data.length * 0.12));
+			// Sample kick/bass frequencies (~10% of spectrum)
+			const bassBins = Math.max(1, Math.floor(data.length * 0.1));
 			let bassSum = 0;
 			for (let i = 0; i < bassBins; i++) {
 				bassSum += data[i];
 			}
-			targetBass = (bassSum / bassBins) / 255;
+			instantBass = (bassSum / bassBins) / 255;
 		}
 
-		// Smooth physics decay (exponentially drops to 0 on silence)
-		this.bassEnergy += (targetBass - this.bassEnergy) * 0.2;
+		// Fast Attack (instant reaction to beat), Slow Decay (smooth fade out)
+		if (instantBass > this.beatEnergy) {
+			this.beatEnergy = instantBass; // Snap immediately to kick drum beat
+		} else {
+			this.beatEnergy += (instantBass - this.beatEnergy) * 0.15; // Smooth release
+		}
 
-		// Threshold to ignore noise floor / strict silence check
-		const isPlaying = hasData && this.bassEnergy > 0.01;
+		const isPlaying = hasData && this.beatEnergy > 0.01;
 
-		// Advance phase ONLY when music is actively detected
+		// Advance phase dynamically: baseline speed + burst on beats
 		if (isPlaying) {
-			this.phase += 0.02 + this.bassEnergy * 0.08;
+			this.phase += 0.02 + this.beatEnergy * 0.06;
 		}
 
-		// Pure flat line when no music, dynamic amplitude when playing
-		const currentAmplitude = isPlaying ? height * 0.35 * this.bassEnergy : 0;
-
-		const points = 150;
+		const points = 120;
 		const step = width / (points - 1);
 		const wavePoints = [];
+
+		// Focus frequency sampling on active audible spectrum (lower ~70%)
+		const activeBins = hasData ? Math.floor(data.length * 0.7) : 0;
 
 		for (let i = 0; i < points; i++) {
 			const x = i * step;
 			const normalizedX = i / (points - 1);
 
-			if (currentAmplitude > 0) {
-				const sin1 = Math.sin(normalizedX * Math.PI * 3 + this.phase);
-				const sin2 = Math.sin(normalizedX * Math.PI * 6 - this.phase * 1.4) * 0.3;
-				const sin3 = Math.cos(normalizedX * Math.PI * 1.5 + this.phase * 0.7) * 0.2;
+			if (isPlaying && activeBins > 0) {
+				// Map position along wave directly to frequency data bin
+				const dataIndex = Math.floor(normalizedX * (activeBins - 1));
+				const frequencyAmp = data[dataIndex] / 255;
 
-				const envelope = Math.sin(normalizedX * Math.PI); // Window tapering at canvas edges
-				const y = centerY + (sin1 + sin2 + sin3) * currentAmplitude * envelope;
+				// Taper curve ends gracefully at canvas left/right borders
+				const envelope = Math.sin(normalizedX * Math.PI);
+
+				// Single clean sine wave modulated directly by live audio frequency
+				const sineWave = Math.sin(normalizedX * Math.PI * 4 + this.phase);
+
+				// Combine base sine movement with live beat/frequency reaction
+				const displacement = sineWave * (height * 0.35) * (frequencyAmp * 0.7 + this.beatEnergy * 0.3);
+
+				const y = centerY + displacement * envelope;
 				wavePoints.push({ x, y });
 			} else {
 				wavePoints.push({ x, y: centerY });
@@ -98,7 +110,7 @@ export class WaveformCurveVisualizer {
 			}
 		};
 
-		// 4. Translucent Area Fill (only when active)
+		// 4. Translucent Area Fill
 		if (isPlaying) {
 			ctx.save();
 			ctx.beginPath();
@@ -115,13 +127,13 @@ export class WaveformCurveVisualizer {
 			ctx.restore();
 		}
 
-		// 5. Glow Pass
+		// 5. Glow Pass (Pulses intensely on beats)
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
 		ctx.lineWidth = 3;
 		ctx.shadowColor = secondary;
-		ctx.shadowBlur = isPlaying ? 10 + this.bassEnergy * 20 : 0;
+		ctx.shadowBlur = isPlaying ? 8 + this.beatEnergy * 25 : 0;
 		ctx.stroke();
 		ctx.restore();
 
@@ -129,7 +141,7 @@ export class WaveformCurveVisualizer {
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
-		ctx.lineWidth = 1.2;
+		ctx.lineWidth = 1.5;
 		ctx.shadowColor = primary;
 		ctx.shadowBlur = isPlaying ? 4 : 0;
 		ctx.stroke();
