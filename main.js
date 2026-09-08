@@ -56,7 +56,7 @@ initButtons();
 
 /*
    Planned Core Features:
-   5. Visualizer Modes: Implement 4 distinct visualizer presets (e.g., Frequency Bars, Oscilloscope Waveform, Circular Spectrum, Particle Field)
+   5. Visualizer Modes: Implement 4 distinct visualizer presets(Particle Field)
 
    Technical Features to Add:
    - CORS & Audio CORS Handling: Set crossOrigin = "anonymous" for external audio URLs
