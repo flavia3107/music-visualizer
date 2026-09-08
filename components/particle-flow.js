@@ -4,15 +4,11 @@ export class ParticleFlowVisualizer {
 	constructor() {
 		this.particles = [];
 		this.smoothedData = new Float32Array(0);
-		this.maxParticles = 1400;
+		this.maxParticles = 1000;
 
-		// Shape Modes: 'circle', 'vortex', 'helix', 'wave'
-		this.shapeMode = 'circle';
-		this.angleOffset = 0;
-
-		// Rhythm tracking
-		this.previousEnergy = 0;
-		this.beatThreshold = 0.12;
+		// Shape Mode: 'wave' (default)
+		this.shapeMode = 'wave';
+		this.phase = 0;
 	}
 
 	setShapeMode(mode) {
@@ -27,12 +23,13 @@ export class ParticleFlowVisualizer {
 
 		const { width, height } = bounds;
 		const centerX = width / 2;
-		const centerY = height / 2;
+		const baselineY = height * 0.65; // Place wave comfortably in lower-middle area
 
+		// 1. Clear frame
 		ctx.save();
 		ctx.clearRect(0, 0, width, height);
 
-		// 1. Resolve Theme Palette
+		// 2. Resolve Palette
 		let themePalette = [];
 		if (Array.isArray(colors.palette) && colors.palette.length > 0) {
 			themePalette = colors.palette;
@@ -41,133 +38,114 @@ export class ParticleFlowVisualizer {
 			themePalette = colorList.length >= 2 ? colorList : ['#ff416c', '#9b51e0', '#00d2ff', '#41e296', '#feb47b'];
 		}
 
-		const numPoints = 64; // Fixed resolution to guarantee complete shape geometry
-		if (this.smoothedData.length !== numPoints) {
-			this.smoothedData = new Float32Array(numPoints);
+		const numHalfPoints = 32;
+		const numTotalPoints = numHalfPoints * 2 - 1;
+
+		if (this.smoothedData.length !== numHalfPoints) {
+			this.smoothedData = new Float32Array(numHalfPoints);
 		}
 
-		// 2. Pure Audio Processing (No dummy fallbacks or synthetic noise)
-		let totalEnergy = 0;
+		// 3. Audio Processing (Mirrored Symmetrical Spectrum)
 		const hasData = data && data.length > 0;
-
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
 
-			for (let i = 0; i < numPoints; i++) {
-				const normalizedDistance = i / (numPoints - 1);
+			for (let i = 0; i < numHalfPoints; i++) {
+				const normalizedDistance = i / (numHalfPoints - 1);
 				const logIndex = Math.pow(normalizedDistance, 1.2) * (activeBins - 1);
 				const idxLower = Math.floor(logIndex);
 				const idxUpper = Math.min(idxLower + 1, activeBins - 1);
 				const frac = logIndex - idxLower;
-
-				// Pure normalized input from Web Audio API
 				const rawVal = (data[idxLower] * (1 - frac) + data[idxUpper] * frac) / 255;
 
-				totalEnergy += rawVal;
-
-				// Exponential response for real beat sensitivity
-				const targetAmp = Math.pow(rawVal, 1.6);
+				let targetAmp = Math.pow(rawVal, 1.6);
 				const rate = targetAmp > this.smoothedData[i] ? 0.45 : 0.2;
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 		} else {
-			// Decay to zero when audio stops or is not present
-			for (let i = 0; i < numPoints; i++) {
+			for (let i = 0; i < numHalfPoints; i++) {
 				this.smoothedData[i] *= 0.85;
 			}
 		}
 
-		const currentAvgEnergy = hasData ? (totalEnergy / numPoints) : 0;
-		const energyDelta = currentAvgEnergy - this.previousEnergy;
-		const isBeat = energyDelta > this.beatThreshold;
-		this.previousEnergy = currentAvgEnergy;
+		// 4. Generate Symmetrical Wave Coordinates
+		this.phase += 0.02; // Subtle undulating animation
+		const wavePoints = new Array(numTotalPoints);
+		const drawWidth = width * 0.9;
+		const halfWidth = drawWidth / 2;
+		const step = halfWidth / (numHalfPoints - 1);
+		const maxWaveHeight = height * 0.4;
 
-		// 3. Compute Complete Geometric Shape Emission Nodes
-		const emissionPoints = [];
-		this.angleOffset += 0.004;
+		for (let i = 0; i < numHalfPoints; i++) {
+			const amp = Math.min(1.0, Math.max(0.01, this.smoothedData[i]));
 
-		const baseRadius = Math.min(width, height) * 0.24;
+			// Subtle ambient sine motion so the wave moves even during quiet sections
+			const ambientWave = Math.sin(this.phase + (i * 0.2)) * 6;
+			const y = baselineY - (amp * maxWaveHeight) + ambientWave;
 
-		for (let i = 0; i < numPoints; i++) {
-			const amp = Math.min(1.0, Math.max(0.0, this.smoothedData[i]));
-			const pct = i / numPoints; // Uniform distribution ensuring 100% shape coverage
-			const angle = (pct * Math.PI * 2) + this.angleOffset;
+			const xOffset = i * step;
+			const centerIdx = numHalfPoints - 1;
 
-			let x = centerX;
-			let y = centerY;
-			let emitAngle = angle;
+			// Emission angle points upward
+			const emitAngle = -Math.PI / 2 + (Math.sin(this.phase + i) * 0.1);
 
-			switch (this.shapeMode) {
-				case 'circle': {
-					const r = baseRadius + (amp * baseRadius * 0.65);
-					x = centerX + Math.cos(angle) * r;
-					y = centerY + Math.sin(angle) * r;
-					emitAngle = angle;
-					break;
-				}
-
-				case 'vortex': {
-					const r = (baseRadius * 0.2) + (pct * baseRadius * 1.4) + (amp * 35);
-					x = centerX + Math.cos(angle * 2) * r;
-					y = centerY + Math.sin(angle * 2) * r;
-					emitAngle = angle + (Math.PI / 2);
-					break;
-				}
-
-				case 'helix': {
-					const waveX = (width * 0.1) + (pct * width * 0.8);
-					const helixHeight = height * 0.2;
-					const phase = (pct * Math.PI * 4) + (this.angleOffset * 4);
-
-					x = waveX;
-					y = centerY + Math.sin(phase) * helixHeight * (1 + amp * 0.8);
-					emitAngle = Math.cos(phase) > 0 ? -Math.PI / 2 : Math.PI / 2;
-					break;
-				}
-
-				case 'wave':
-				default: {
-					const waveWidth = width * 0.8;
-					x = (width * 0.1) + (pct * waveWidth);
-					y = (height * 0.85) - (amp * height * 0.55);
-					emitAngle = -Math.PI / 2;
-					break;
-				}
-			}
-
-			emissionPoints.push({ x, y, angle: emitAngle, amp, index: i });
+			wavePoints[centerIdx + i] = { x: centerX + xOffset, y, amp, angle: emitAngle, index: i };
+			wavePoints[centerIdx - i] = { x: centerX - xOffset, y, amp, angle: emitAngle, index: i };
 		}
 
-		// 4. Guaranteed Full Shape Spawning + Rhythm Burst
-		for (let i = 0; i < emissionPoints.length; i++) {
-			const pt = emissionPoints[i];
-			const colorIndex = Math.floor((i / emissionPoints.length) * themePalette.length);
-			const color = themePalette[colorIndex % themePalette.length];
+		// 5. Draw Glowing Base Wave Ribbon
+		ctx.save();
+		ctx.beginPath();
+		ctx.moveTo(wavePoints[0].x, wavePoints[0].y);
 
-			// A. Base Continuous Emission: Guarantee full shape visibility across all 64 nodes
-			if (this.particles.length < this.maxParticles) {
-				this.particles.push(new Particle(pt.x, pt.y, pt.angle, color));
-			}
+		for (let i = 0; i < wavePoints.length - 1; i++) {
+			const xc = (wavePoints[i].x + wavePoints[i + 1].x) / 2;
+			const yc = (wavePoints[i].y + wavePoints[i + 1].y) / 2;
+			ctx.quadraticCurveTo(wavePoints[i].x, wavePoints[i].y, xc, yc);
+		}
 
-			// B. Dynamic Audio & Rhythm Bursts: Extra density on active frequencies and beats
-			let extraBurst = 0;
-			if (pt.amp > 0.1) {
-				extraBurst += Math.floor(pt.amp * 3.5);
-			}
-			if (isBeat) {
-				extraBurst += 2;
-			}
+		ctx.strokeStyle = themePalette[2] || '#00d2ff';
+		ctx.lineWidth = 3;
+		ctx.shadowColor = themePalette[2] || '#00d2ff';
+		ctx.shadowBlur = 12;
+		ctx.stroke();
+		ctx.restore();
 
-			for (let b = 0; b < extraBurst; b++) {
-				if (this.particles.length >= this.maxParticles) break;
+		// 6. Spawn Particles Across the Entire Wave Width
+		if (hasData) {
+			for (let i = 0; i < wavePoints.length; i++) {
+				const pt = wavePoints[i];
 
-				const jitterX = pt.x + (Math.random() - 0.5) * 6;
-				const jitterY = pt.y + (Math.random() - 0.5) * 6;
-				this.particles.push(new Particle(jitterX, jitterY, pt.angle, color));
+				// A. Base Continuous Emission: Keeps full wave shape visible across all 63 points
+				if (Math.random() < 0.4 && this.particles.length < this.maxParticles) {
+					const colorIndex = Math.floor((i / wavePoints.length) * themePalette.length);
+					const color = themePalette[colorIndex % themePalette.length];
+
+					const p = new Particle(pt.x, pt.y, pt.angle, color);
+					p.decay = 0.03 + Math.random() * 0.02; // Faster decay keeps particles tight along the wave
+					this.particles.push(p);
+				}
+
+				// B. Dynamic Peak Bursts: Spawn additional particles on audio peaks
+				if (pt.amp > 0.12) {
+					const burstCount = Math.floor(pt.amp * 3);
+
+					for (let s = 0; s < burstCount; s++) {
+						if (this.particles.length >= this.maxParticles) break;
+
+						const colorIndex = Math.floor((i / wavePoints.length) * themePalette.length);
+						const color = themePalette[colorIndex % themePalette.length];
+
+						const jitterX = pt.x + (Math.random() - 0.5) * 8;
+						const p = new Particle(jitterX, pt.y, pt.angle, color);
+						p.decay = 0.025 + Math.random() * 0.02;
+						this.particles.push(p);
+					}
+				}
 			}
 		}
 
-		// 5. Particle Update and Render
+		// 7. Update and Draw active particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
 			p.update();
@@ -181,10 +159,3 @@ export class ParticleFlowVisualizer {
 		ctx.restore();
 	}
 }
-
-/**
- * visualizer.setShapeMode('circle');  // Radial burst ring
- * visualizer.setShapeMode('vortex');  // Spiral energy swirl
- * visualizer.setShapeMode('helix');   // Sine-wave / DNA strands
- * visualizer.setShapeMode('wave');    // Upward arching spectrum
- */
