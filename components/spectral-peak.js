@@ -8,15 +8,36 @@ export class SpectralPeakVisualizer {
 		if (!ctx || !bounds.width || !bounds.height) return;
 
 		const { width, height } = bounds;
-		const paddingX = width * 0.05; // Margins on left and right
+		const paddingX = width * 0.05;
 		const drawWidth = width - (paddingX * 2);
-		const baselineY = height * 0.92; // Bottom baseline offset
+		const baselineY = height * 0.92;
 		const maxWaveHeight = height * 0.75;
 
 		ctx.save();
 		ctx.clearRect(0, 0, width, height);
 
-		const numPoints = 48; // Fewer points for smooth, organic peaks
+		// 1. Resolve Dynamic Theme Colors
+		let themePalette = [];
+
+		if (Array.isArray(colors.palette) && colors.palette.length > 0) {
+			// Uses theme palette array if provided (e.g. ['#ff0055', '#00e5ff', '#7000ff'])
+			themePalette = colors.palette;
+		} else {
+			// Collects individual color keys or falls back to standard defaults
+			const colorList = [
+				colors.primary,
+				colors.secondary,
+				colors.accent,
+				colors.highlight,
+				colors.muted
+			].filter(Boolean);
+
+			themePalette = colorList.length >= 2
+				? colorList
+				: ['#ff7e5f', '#feb47b', '#41e296', '#00d2ff', '#3a7bd5', '#9b51e0', '#ff416c'];
+		}
+
+		const numPoints = 48;
 		if (this.smoothedData.length !== numPoints) {
 			this.smoothedData = new Float32Array(numPoints);
 		}
@@ -29,22 +50,19 @@ export class SpectralPeakVisualizer {
 			for (let i = 0; i < numPoints; i++) {
 				const normalizedX = i / (numPoints - 1);
 
-				// Logarithmic frequency sampling (enhances highs and mid response)
+				// Logarithmic frequency sampling
 				const logIndex = Math.pow(normalizedX, 1.2) * (activeBins - 1);
 				const idxLower = Math.floor(logIndex);
 				const idxUpper = Math.min(idxLower + 1, activeBins - 1);
 				const frac = logIndex - idxLower;
 				const rawVal = (data[idxLower] * (1 - frac) + data[idxUpper] * frac) / 255;
 
-				// Dynamic curve calculation
 				let targetAmp = Math.pow(rawVal, 1.8);
 
-				// Highs boost
 				if (normalizedX > 0.6) {
 					targetAmp *= 1.25;
 				}
 
-				// Smooth attack and decay
 				const rate = targetAmp > this.smoothedData[i] ? 0.45 : 0.2;
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
@@ -57,7 +75,6 @@ export class SpectralPeakVisualizer {
 		const step = drawWidth / (numPoints - 1);
 		const wavePoints = [];
 
-		// Generate coordinates anchored to baseline
 		for (let i = 0; i < numPoints; i++) {
 			const x = paddingX + i * step;
 			const amp = Math.min(1.0, Math.max(0.02, this.smoothedData[i]));
@@ -65,23 +82,21 @@ export class SpectralPeakVisualizer {
 			wavePoints.push({ x, y });
 		}
 
-		// 1. Rainbow Stroke Gradient (Left to Right)
+		// 2. Build Dynamic Linear Horizontal Gradient from Theme Colors
 		const strokeGradient = ctx.createLinearGradient(paddingX, 0, paddingX + drawWidth, 0);
-		strokeGradient.addColorStop(0.00, colors.orange || '#ff7e5f');
-		strokeGradient.addColorStop(0.20, colors.yellow || '#feb47b');
-		strokeGradient.addColorStop(0.38, colors.green || '#41e296');
-		strokeGradient.addColorStop(0.55, colors.cyan || '#00d2ff');
-		strokeGradient.addColorStop(0.75, colors.blue || '#3a7bd5');
-		strokeGradient.addColorStop(0.88, colors.purple || '#9b51e0');
-		strokeGradient.addColorStop(1.00, colors.magenta || '#ff416c');
+		const stopStep = 1 / (themePalette.length - 1 || 1);
 
-		// 2. Vertical Rainbow Fill Gradient (Top color opacity down to baseline)
+		themePalette.forEach((color, index) => {
+			const stop = Math.min(1.0, index * stopStep);
+			strokeGradient.addColorStop(stop, color);
+		});
+
+		// 3. Build Vertical Fade Gradient
 		const fillGradient = ctx.createLinearGradient(0, baselineY - maxWaveHeight, 0, baselineY);
 		fillGradient.addColorStop(0.00, 'rgba(255, 255, 255, 0.35)');
-		fillGradient.addColorStop(0.50, 'rgba(65, 226, 150, 0.18)');
-		fillGradient.addColorStop(1.00, 'rgba(10, 15, 30, 0.02)');
+		fillGradient.addColorStop(0.60, 'rgba(255, 255, 255, 0.10)');
+		fillGradient.addColorStop(1.00, 'rgba(0, 0, 0, 0.00)');
 
-		// Helper path builder for smooth curve
 		const buildCurvePath = () => {
 			ctx.beginPath();
 			ctx.moveTo(wavePoints[0].x, wavePoints[0].y);
@@ -93,33 +108,34 @@ export class SpectralPeakVisualizer {
 			ctx.lineTo(wavePoints[wavePoints.length - 1].x, wavePoints[wavePoints.length - 1].y);
 		};
 
-		// Render Filled Area
+		// Render Shaded Area with Dynamic Theme Tint
 		ctx.save();
 		buildCurvePath();
 		ctx.lineTo(paddingX + drawWidth, baselineY);
 		ctx.lineTo(paddingX, baselineY);
 		ctx.closePath();
 
-		// Layer solid background fill + horizontal color tinting
 		ctx.fillStyle = fillGradient;
 		ctx.fill();
+
+		// Composite horizontal theme colors onto the fill mask
 		ctx.fillStyle = strokeGradient;
 		ctx.globalCompositeOperation = 'source-atop';
-		ctx.globalAlpha = 0.45;
+		ctx.globalAlpha = 0.5;
 		ctx.fillRect(0, 0, width, height);
 		ctx.restore();
 
-		// Render Outer Glow Line
+		// Outer Glow Line using Primary Theme Colors
 		ctx.save();
 		buildCurvePath();
 		ctx.strokeStyle = strokeGradient;
 		ctx.lineWidth = 4;
-		ctx.shadowColor = 'rgba(255, 255, 255, 0.4)';
-		ctx.shadowBlur = 12;
+		ctx.shadowColor = themePalette[0] || 'rgba(255, 255, 255, 0.5)';
+		ctx.shadowBlur = 10;
 		ctx.stroke();
 		ctx.restore();
 
-		// Render Sharp Inner Line
+		// Crisp Inner Line
 		ctx.save();
 		buildCurvePath();
 		ctx.strokeStyle = strokeGradient;
