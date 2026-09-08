@@ -5,6 +5,7 @@ import { ThemeManager } from './components/themes-manager.js';
 import { AudioPlayerController } from './components/audio-player-controller.js';
 import { PartyMode } from './components/full-screen.js';
 import { SpectralPeakVisualizer } from './components/spectral-peak.js';
+import { ParticleFlowVisualizer } from './components/particle-flow.js'
 
 import {
    initButtons,
@@ -20,7 +21,8 @@ const CONTROLLER_CONFIG = { getTracks: () => uploadedFiles, getCurrentTrackId, p
 const visualizers = {
    'Radial Bars': new RadialBarsVisualizer(),
    'Waveform Curve': new WaveformCurveVisualizer(),
-   'Spectral Peak': new SpectralPeakVisualizer()
+   'Spectral Peak': new SpectralPeakVisualizer(),
+   'Particle Flow': new ParticleFlowVisualizer()
 };
 
 const manager = new VisualizerManager('mainCanvas', getAudioData, { colors: THEME_CONFIG[0].palette });
