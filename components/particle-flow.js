@@ -4,9 +4,8 @@ export class ParticleFlowVisualizer {
 	constructor() {
 		this.particles = [];
 		this.smoothedData = new Float32Array(0);
-		this.maxParticles = 1000;
+		this.maxParticles = 1200; // Increased cap for dense, fiery flame volume
 
-		// Shape Mode: 'wave' (default)
 		this.shapeMode = 'wave';
 		this.phase = 0;
 	}
@@ -23,19 +22,20 @@ export class ParticleFlowVisualizer {
 
 		const { width, height } = bounds;
 		const centerX = width / 2;
-		const baselineY = height * 0.65; // Place wave comfortably in lower-middle area
+
+		// Anchor baseline near the bottom edge like a bed of fire
+		const baselineY = height * 0.95;
 
 		// 1. Clear frame
 		ctx.save();
 		ctx.clearRect(0, 0, width, height);
 
-		// 2. Resolve Palette
+		// 2. Resolve Dynamic Fire Palette (White Core -> Yellow -> Orange -> Deep Red)
 		let themePalette = [];
 		if (Array.isArray(colors.palette) && colors.palette.length > 0) {
 			themePalette = colors.palette;
 		} else {
-			const colorList = [colors.primary, colors.secondary, colors.accent, colors.highlight, colors.muted].filter(Boolean);
-			themePalette = colorList.length >= 2 ? colorList : ['#ff416c', '#9b51e0', '#00d2ff', '#41e296', '#feb47b'];
+			themePalette = ['#ffffff', '#ffeb3b', '#ff9800', '#ff3d00', '#dd2c00'];
 		}
 
 		const numHalfPoints = 32;
@@ -45,7 +45,7 @@ export class ParticleFlowVisualizer {
 			this.smoothedData = new Float32Array(numHalfPoints);
 		}
 
-		// 3. Audio Processing (Mirrored Symmetrical Spectrum)
+		// 3. Audio Frequency Processing (Symmetrical Bass Center for Big Middle Flame)
 		const hasData = data && data.length > 0;
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
@@ -58,96 +58,101 @@ export class ParticleFlowVisualizer {
 				const frac = logIndex - idxLower;
 				const rawVal = (data[idxLower] * (1 - frac) + data[idxUpper] * frac) / 255;
 
-				let targetAmp = Math.pow(rawVal, 1.6);
-				const rate = targetAmp > this.smoothedData[i] ? 0.45 : 0.2;
+				// High exponent makes big bass hits explode like a flame flare
+				let targetAmp = Math.pow(rawVal, 1.7);
+				const rate = targetAmp > this.smoothedData[i] ? 0.5 : 0.18; // Fast rise, warm slow cooling decay
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 		} else {
 			for (let i = 0; i < numHalfPoints; i++) {
-				this.smoothedData[i] *= 0.85;
+				this.smoothedData[i] *= 0.88;
 			}
 		}
 
-		// 4. Generate Symmetrical Wave Coordinates
-		this.phase += 0.02; // Subtle undulating animation
+		// 4. Compute Flame Origin Nodes
+		this.phase += 0.04; // Flame turbulence speed
 		const wavePoints = new Array(numTotalPoints);
-		const drawWidth = width * 0.9;
+		const drawWidth = width * 0.95;
 		const halfWidth = drawWidth / 2;
 		const step = halfWidth / (numHalfPoints - 1);
-		const maxWaveHeight = height * 0.4;
+		const maxFlameHeight = height * 0.7;
 
 		for (let i = 0; i < numHalfPoints; i++) {
-			const amp = Math.min(1.0, Math.max(0.01, this.smoothedData[i]));
+			const amp = Math.min(1.0, Math.max(0.02, this.smoothedData[i]));
 
-			// Subtle ambient sine motion so the wave moves even during quiet sections
-			const ambientWave = Math.sin(this.phase + (i * 0.2)) * 6;
-			const y = baselineY - (amp * maxWaveHeight) + ambientWave;
+			// Thermal flicker noise
+			const flicker = (Math.sin(this.phase + i * 0.5) * 4) + (Math.cos(this.phase * 1.5 + i) * 3);
+			const y = baselineY - (amp * maxFlameHeight) + flicker;
 
 			const xOffset = i * step;
 			const centerIdx = numHalfPoints - 1;
 
-			// Emission angle points upward
-			const emitAngle = -Math.PI / 2 + (Math.sin(this.phase + i) * 0.1);
+			// Upward vertical heat trajectory with slight outward draft away from center
+			const outwardDraft = (i / numHalfPoints) * 0.2;
+			const angleLeft = -Math.PI / 2 - outwardDraft;
+			const angleRight = -Math.PI / 2 + outwardDraft;
 
-			wavePoints[centerIdx + i] = { x: centerX + xOffset, y, amp, angle: emitAngle, index: i };
-			wavePoints[centerIdx - i] = { x: centerX - xOffset, y, amp, angle: emitAngle, index: i };
+			wavePoints[centerIdx + i] = { x: centerX + xOffset, y, amp, angle: angleRight, index: i };
+			wavePoints[centerIdx - i] = { x: centerX - xOffset, y, amp, angle: angleLeft, index: i };
 		}
 
-		// 5. Draw Glowing Base Wave Ribbon
-		ctx.save();
-		ctx.beginPath();
-		ctx.moveTo(wavePoints[0].x, wavePoints[0].y);
+		// NOTE: No line/stroke rendering here! Pure particle combustion.
 
-		for (let i = 0; i < wavePoints.length - 1; i++) {
-			const xc = (wavePoints[i].x + wavePoints[i + 1].x) / 2;
-			const yc = (wavePoints[i].y + wavePoints[i + 1].y) / 2;
-			ctx.quadraticCurveTo(wavePoints[i].x, wavePoints[i].y, xc, yc);
-		}
-
-		ctx.strokeStyle = themePalette[2] || '#00d2ff';
-		ctx.lineWidth = 3;
-		ctx.shadowColor = themePalette[2] || '#00d2ff';
-		ctx.shadowBlur = 12;
-		ctx.stroke();
-		ctx.restore();
-
-		// 6. Spawn Particles Across the Entire Wave Width
+		// 5. Fire Particle Generation
 		if (hasData) {
 			for (let i = 0; i < wavePoints.length; i++) {
 				const pt = wavePoints[i];
 
-				// A. Base Continuous Emission: Keeps full wave shape visible across all 63 points
-				if (Math.random() < 0.4 && this.particles.length < this.maxParticles) {
-					const colorIndex = Math.floor((i / wavePoints.length) * themePalette.length);
-					const color = themePalette[colorIndex % themePalette.length];
+				// A. Base Ember Bed: Continuous glowing embers across the whole bottom bed
+				if (Math.random() < 0.6 && this.particles.length < this.maxParticles) {
+					// Pick warmer colors (red/orange) for background embers
+					const emberColor = themePalette[Math.min(themePalette.length - 1, 2 + Math.floor(Math.random() * 3))];
 
-					const p = new Particle(pt.x, pt.y, pt.angle, color);
-					p.decay = 0.03 + Math.random() * 0.02; // Faster decay keeps particles tight along the wave
+					const p = new Particle(pt.x, baselineY, pt.angle, emberColor);
+
+					// Modify velocity for rising fire dynamics
+					p.vy = -1.0 - (Math.random() * 2.0);
+					p.vx = (Math.random() - 0.5) * 1.2;
+					p.decay = 0.02 + Math.random() * 0.02; // Soft fade
+
 					this.particles.push(p);
 				}
 
-				// B. Dynamic Peak Bursts: Spawn additional particles on audio peaks
-				if (pt.amp > 0.12) {
-					const burstCount = Math.floor(pt.amp * 3);
+				// B. Audio Flame Flares: Intense white/yellow bursts shooting up on music peaks
+				if (pt.amp > 0.08) {
+					const burstCount = Math.floor(pt.amp * 5);
 
 					for (let s = 0; s < burstCount; s++) {
 						if (this.particles.length >= this.maxParticles) break;
 
-						const colorIndex = Math.floor((i / wavePoints.length) * themePalette.length);
-						const color = themePalette[colorIndex % themePalette.length];
+						// Hotter intensity (white/yellow) at the core of high peaks
+						const colorIdx = Math.floor(Math.random() * Math.min(3, themePalette.length));
+						const flameColor = themePalette[colorIdx];
 
-						const jitterX = pt.x + (Math.random() - 0.5) * 8;
-						const p = new Particle(jitterX, pt.y, pt.angle, color);
-						p.decay = 0.025 + Math.random() * 0.02;
+						const spawnX = pt.x + (Math.random() - 0.5) * 12;
+						const spawnY = pt.y + (Math.random() - 0.5) * 10;
+
+						const p = new Particle(spawnX, spawnY, pt.angle, flameColor);
+
+						// Stronger audio peaks blast particles higher with faster upward velocity
+						p.vy = -(2.5 + (pt.amp * 4.5) + (Math.random() * 2.0));
+						p.vx += (Math.random() - 0.5) * 1.5;
+						p.decay = 0.015 + Math.random() * 0.02;
+
 						this.particles.push(p);
 					}
 				}
 			}
 		}
 
-		// 7. Update and Draw active particles
+		// 6. Update and Render Fire Particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
+
+			// Thermal buoyancy: simulate heat rising & turbulence draft
+			p.vy -= 0.05; // Accelerate upward
+			p.vx += (Math.random() - 0.5) * 0.2; // Heat turbulence shaking
+
 			p.update();
 			p.draw(ctx);
 
@@ -159,3 +164,9 @@ export class ParticleFlowVisualizer {
 		ctx.restore();
 	}
 }
+/**
+ * visualizer.setShapeMode('circle');  // Radial burst ring
+ * visualizer.setShapeMode('vortex');  // Spiral energy swirl
+ * visualizer.setShapeMode('helix');   // Sine-wave / DNA strands
+ * visualizer.setShapeMode('wave');    // Upward arching spectrum
+ */
