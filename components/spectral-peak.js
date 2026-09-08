@@ -10,20 +10,20 @@ export class SpectralPeakVisualizer {
 		const { width, height } = bounds;
 		const paddingX = width * 0.05;
 		const drawWidth = width - (paddingX * 2);
+		const centerX = width / 2;
+		const halfWidth = drawWidth / 2;
 		const baselineY = height * 0.92;
 		const maxWaveHeight = height * 0.75;
 
 		ctx.save();
 		ctx.clearRect(0, 0, width, height);
 
-		// 1. Resolve Dynamic Theme Colors
+		// 1. Dynamic Theme Colors Setup
 		let themePalette = [];
 
 		if (Array.isArray(colors.palette) && colors.palette.length > 0) {
-			// Uses theme palette array if provided (e.g. ['#ff0055', '#00e5ff', '#7000ff'])
 			themePalette = colors.palette;
 		} else {
-			// Collects individual color keys or falls back to standard defaults
 			const colorList = [
 				colors.primary,
 				colors.secondary,
@@ -34,12 +34,14 @@ export class SpectralPeakVisualizer {
 
 			themePalette = colorList.length >= 2
 				? colorList
-				: ['#ff7e5f', '#feb47b', '#41e296', '#00d2ff', '#3a7bd5', '#9b51e0', '#ff416c'];
+				: ['#ff416c', '#9b51e0', '#00d2ff', '#41e296', '#feb47b'];
 		}
 
-		const numPoints = 48;
-		if (this.smoothedData.length !== numPoints) {
-			this.smoothedData = new Float32Array(numPoints);
+		const numHalfPoints = 28; // Points per side
+		const numTotalPoints = numHalfPoints * 2 - 1; // Includes single center point
+
+		if (this.smoothedData.length !== numHalfPoints) {
+			this.smoothedData = new Float32Array(numHalfPoints);
 		}
 
 		const hasData = data && data.length > 0;
@@ -47,11 +49,12 @@ export class SpectralPeakVisualizer {
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
 
-			for (let i = 0; i < numPoints; i++) {
-				const normalizedX = i / (numPoints - 1);
+			for (let i = 0; i < numHalfPoints; i++) {
+				// 0.0 at center, 1.0 at outer edges
+				const normalizedDistance = i / (numHalfPoints - 1);
 
-				// Logarithmic frequency sampling
-				const logIndex = Math.pow(normalizedX, 1.2) * (activeBins - 1);
+				// Logarithmic frequency sampling starting from center (bass) outwards (treble)
+				const logIndex = Math.pow(normalizedDistance, 1.2) * (activeBins - 1);
 				const idxLower = Math.floor(logIndex);
 				const idxUpper = Math.min(idxLower + 1, activeBins - 1);
 				const frac = logIndex - idxLower;
@@ -59,7 +62,7 @@ export class SpectralPeakVisualizer {
 
 				let targetAmp = Math.pow(rawVal, 1.8);
 
-				if (normalizedX > 0.6) {
+				if (normalizedDistance > 0.6) {
 					targetAmp *= 1.25;
 				}
 
@@ -67,31 +70,47 @@ export class SpectralPeakVisualizer {
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 		} else {
-			for (let i = 0; i < numPoints; i++) {
+			for (let i = 0; i < numHalfPoints; i++) {
 				this.smoothedData[i] *= 0.85;
 			}
 		}
 
-		const step = drawWidth / (numPoints - 1);
-		const wavePoints = [];
+		// 2. Build Symmetrical Point Array (Left to Right)
+		const wavePoints = new Array(numTotalPoints);
+		const step = halfWidth / (numHalfPoints - 1);
 
-		for (let i = 0; i < numPoints; i++) {
-			const x = paddingX + i * step;
+		for (let i = 0; i < numHalfPoints; i++) {
 			const amp = Math.min(1.0, Math.max(0.02, this.smoothedData[i]));
 			const y = baselineY - (amp * maxWaveHeight);
-			wavePoints.push({ x, y });
+			const xOffset = i * step;
+
+			// Center index in the total array
+			const centerIdx = numHalfPoints - 1;
+
+			// Right side point
+			wavePoints[centerIdx + i] = { x: centerX + xOffset, y };
+			// Left side point (mirrored)
+			wavePoints[centerIdx - i] = { x: centerX - xOffset, y };
 		}
 
-		// 2. Build Dynamic Linear Horizontal Gradient from Theme Colors
+		// 3. Build Mirrored Gradient (Outer Left -> Center -> Outer Right)
 		const strokeGradient = ctx.createLinearGradient(paddingX, 0, paddingX + drawWidth, 0);
-		const stopStep = 1 / (themePalette.length - 1 || 1);
+		const stopsCount = themePalette.length;
 
-		themePalette.forEach((color, index) => {
-			const stop = Math.min(1.0, index * stopStep);
+		// Outer Left to Center
+		themePalette.forEach((color, idx) => {
+			const stop = (idx / (stopsCount - 1)) * 0.5;
 			strokeGradient.addColorStop(stop, color);
 		});
 
-		// 3. Build Vertical Fade Gradient
+		// Center to Outer Right (Mirrored)
+		for (let idx = stopsCount - 2; idx >= 0; idx--) {
+			const normalizedIdx = (stopsCount - 1 - idx) / (stopsCount - 1);
+			const stop = 0.5 + (normalizedIdx * 0.5);
+			strokeGradient.addColorStop(Math.min(1.0, stop), themePalette[idx]);
+		}
+
+		// 4. Vertical Fade Gradient
 		const fillGradient = ctx.createLinearGradient(0, baselineY - maxWaveHeight, 0, baselineY);
 		fillGradient.addColorStop(0.00, 'rgba(255, 255, 255, 0.35)');
 		fillGradient.addColorStop(0.60, 'rgba(255, 255, 255, 0.10)');
@@ -108,24 +127,24 @@ export class SpectralPeakVisualizer {
 			ctx.lineTo(wavePoints[wavePoints.length - 1].x, wavePoints[wavePoints.length - 1].y);
 		};
 
-		// Render Shaded Area with Dynamic Theme Tint
+		// Render Shaded Area
 		ctx.save();
 		buildCurvePath();
-		ctx.lineTo(paddingX + drawWidth, baselineY);
-		ctx.lineTo(paddingX, baselineY);
+		ctx.lineTo(centerX + halfWidth, baselineY);
+		ctx.lineTo(centerX - halfWidth, baselineY);
 		ctx.closePath();
 
 		ctx.fillStyle = fillGradient;
 		ctx.fill();
 
-		// Composite horizontal theme colors onto the fill mask
+		// Overlay horizontal palette tint onto fill
 		ctx.fillStyle = strokeGradient;
 		ctx.globalCompositeOperation = 'source-atop';
 		ctx.globalAlpha = 0.5;
 		ctx.fillRect(0, 0, width, height);
 		ctx.restore();
 
-		// Outer Glow Line using Primary Theme Colors
+		// Render Outer Glow Line
 		ctx.save();
 		buildCurvePath();
 		ctx.strokeStyle = strokeGradient;
@@ -135,7 +154,7 @@ export class SpectralPeakVisualizer {
 		ctx.stroke();
 		ctx.restore();
 
-		// Crisp Inner Line
+		// Render Sharp Inner Line
 		ctx.save();
 		buildCurvePath();
 		ctx.strokeStyle = strokeGradient;
