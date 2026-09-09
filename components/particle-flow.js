@@ -7,7 +7,7 @@ export class ParticleFlowVisualizer {
 		this.spatialData = new Float32Array(0);
 		this.maxParticles = 1200;
 
-		this.shapeMode = 'wave';
+		this.shapeMode = 'vortex';
 		this.phase = 0;
 	}
 
@@ -39,42 +39,35 @@ export class ParticleFlowVisualizer {
 		}
 
 		const numHalfPoints = 32;
-		const numTotalPoints = numHalfPoints * 2 - 1;
 
 		if (this.smoothedData.length !== numHalfPoints) {
 			this.smoothedData = new Float32Array(numHalfPoints);
 			this.spatialData = new Float32Array(numHalfPoints);
 		}
 
-		// 3. Audio Frequency Processing with Temporal Smoothing
+		// 3. Process Audio Frequency Data
 		const hasData = data && data.length > 0;
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
 
 			for (let i = 0; i < numHalfPoints; i++) {
 				const normalizedDistance = i / (numHalfPoints - 1);
-				// Lower logarithmic power softens the extreme bass spike at bin 0
-				const logIndex = Math.pow(normalizedDistance, 0.8) * (activeBins - 1);
+				const logIndex = Math.pow(normalizedDistance, 0.9) * (activeBins - 1);
 				const idxLower = Math.floor(logIndex);
 				const idxUpper = Math.min(idxLower + 1, activeBins - 1);
 				const frac = logIndex - idxLower;
 				const rawVal = (data[idxLower] * (1 - frac) + data[idxUpper] * frac) / 255;
 
-				// Scale down low index (bass) slightly so center peak doesn't overwhelm mid/highs
-				const bassDampener = 0.65 + (normalizedDistance * 0.35);
-				const targetAmp = Math.pow(rawVal * bassDampener, 1.3);
-
+				const targetAmp = Math.pow(rawVal, 1.2);
 				const rate = targetAmp > this.smoothedData[i] ? 0.45 : 0.15;
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 
-			// 4. Spatial Gaussian Smoothing (Blends sharp center peaks softly into neighboring points)
+			// Spatial smoothing across adjacent nodes
 			for (let i = 0; i < numHalfPoints; i++) {
 				const prev = this.smoothedData[Math.max(0, i - 1)];
 				const curr = this.smoothedData[i];
 				const next = this.smoothedData[Math.min(numHalfPoints - 1, i + 1)];
-
-				// 3-point Gaussian kernel weighting [0.25, 0.5, 0.25]
 				this.spatialData[i] = (prev * 0.25) + (curr * 0.5) + (next * 0.25);
 			}
 		} else {
@@ -84,80 +77,93 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 5. Compute Perfectly Symmetrical Coordinates
+		// 4. Generate Left-Half Nodes (REVERSED: Bass/index 0 sits at centerX)
 		this.phase += 0.03;
-		const wavePoints = new Array(numTotalPoints);
-		const drawWidth = width * 0.92;
-		const halfWidth = drawWidth / 2;
-		const step = halfWidth / (numHalfPoints - 1);
-		const maxFlameHeight = height * 0.55;
+		const leftPoints = [];
+		const maxFlameHeight = height * 0.5;
 
 		for (let i = 0; i < numHalfPoints; i++) {
 			const amp = Math.min(1.0, Math.max(0.02, this.spatialData[i]));
 
-			// Mirror flicker noise identically across left/right using absolute index distance
+			// Reversing the ratio puts index 0 (bass/peaks) at centerX and high frequencies at edge 0
+			const x = (1 - (i / (numHalfPoints - 1))) * centerX;
 			const flicker = (Math.sin(this.phase + i * 0.4) * 3) + (Math.cos(this.phase * 1.3 + i * 0.6) * 3);
 			const y = baselineY - (amp * maxFlameHeight) + flicker;
 
-			const xOffset = i * step;
-			const centerIdx = numHalfPoints - 1;
-
-			// Equal outward heat angles for mirrored sides
-			const outwardDraft = (i / numHalfPoints) * 0.18;
-			const angleLeft = -Math.PI / 2 - outwardDraft;
-			const angleRight = -Math.PI / 2 + outwardDraft;
-
-			wavePoints[centerIdx + i] = { x: centerX + xOffset, y, amp, angle: angleRight, halfIndex: i };
-			wavePoints[centerIdx - i] = { x: centerX - xOffset, y, amp, angle: angleLeft, halfIndex: i };
+			leftPoints.push({ x, y, amp, index: i });
 		}
 
-		// 6. Spawn Symmetrical Fire Particles with Mirrored Palette
+		// 5. Spawn Left Particles and Direct-Mirror Them to the Right
 		if (hasData) {
-			for (let i = 0; i < wavePoints.length; i++) {
-				const pt = wavePoints[i];
+			for (let i = 0; i < leftPoints.length; i++) {
+				const pt = leftPoints[i];
 
-				// Mirrored color distribution radiating outward from center
-				const colorRatio = pt.halfIndex / (numHalfPoints - 1);
+				// Palette colors map outward from center (index 0) to outer edges
+				const colorRatio = pt.index / (numHalfPoints - 1);
 				const colorIdx = Math.floor(colorRatio * themePalette.length);
 				const color = themePalette[colorIdx % themePalette.length];
 
-				// A. Ember Base Bed
-				if (Math.random() < 0.55 && this.particles.length < this.maxParticles) {
-					const p = new Particle(pt.x, baselineY, pt.angle, color);
-					p.vy = -0.8 - (Math.random() * 1.8);
-					p.vx = (Math.random() - 0.5) * 1.0;
-					p.decay = 0.02 + Math.random() * 0.02;
-					this.particles.push(p);
+				// A. Base Ember Bed
+				if (Math.random() < 0.5 && this.particles.length < this.maxParticles - 1) {
+					const vx = (Math.random() - 0.5) * 0.6;
+					const vy = -0.8 - (Math.random() * 1.5);
+					const decay = 0.025 + Math.random() * 0.02;
+
+					// Spawn Left Particle
+					const pLeft = new Particle(pt.x, baselineY, -Math.PI / 2, color);
+					pLeft.vx = vx;
+					pLeft.vy = vy;
+					pLeft.decay = decay;
+					this.particles.push(pLeft);
+
+					// Spawn Mirrored Right Particle
+					if (pt.x < centerX - 2) {
+						const pRight = new Particle(width - pt.x, baselineY, -Math.PI / 2, color);
+						pRight.vx = -vx;
+						pRight.vy = vy;
+						pRight.decay = decay;
+						this.particles.push(pRight);
+					}
 				}
 
-				// B. Audio Flame Peaks
+				// B. Audio Peak Flares (Blasts tallest in center)
 				if (pt.amp > 0.06) {
-					const burstCount = Math.floor(pt.amp * 4);
+					const burstCount = Math.floor(pt.amp * 2);
 
 					for (let s = 0; s < burstCount; s++) {
-						if (this.particles.length >= this.maxParticles) break;
+						if (this.particles.length >= this.maxParticles - 1) break;
 
-						const spawnX = pt.x + (Math.random() - 0.5) * 10;
-						const spawnY = pt.y + (Math.random() - 0.5) * 8;
+						const offsetX = (Math.random() - 0.5) * 8;
+						const offsetY = (Math.random() - 0.5) * 6;
+						const vx = (Math.random() - 0.5) * 0.8;
+						const vy = -(1.8 + (pt.amp * 2.5) + (Math.random() * 1.2));
+						const decay = 0.02 + Math.random() * 0.02;
 
-						const p = new Particle(spawnX, spawnY, pt.angle, color);
-						p.vy = -(2.0 + (pt.amp * 3.5) + (Math.random() * 1.8));
-						p.vx += (Math.random() - 0.5) * 1.2;
-						p.decay = 0.018 + Math.random() * 0.02;
+						// Left Peak Particle
+						const pLeft = new Particle(pt.x + offsetX, pt.y + offsetY, -Math.PI / 2, color);
+						pLeft.vx = vx;
+						pLeft.vy = vy;
+						pLeft.decay = decay;
+						this.particles.push(pLeft);
 
-						this.particles.push(p);
+						// Mirrored Right Peak Particle
+						if (pt.x < centerX - 2) {
+							const pRight = new Particle(width - (pt.x + offsetX), pt.y + offsetY, -Math.PI / 2, color);
+							pRight.vx = -vx;
+							pRight.vy = vy;
+							pRight.decay = decay;
+							this.particles.push(pRight);
+						}
 					}
 				}
 			}
 		}
 
-		// 7. Render Particle Fire Physics
+		// 6. Update and Render Particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
 
-			p.vy -= 0.04; // Gentle thermal rise
-			p.vx += (Math.random() - 0.5) * 0.18; // Draft turbulence
-
+			p.vy -= 0.03; // Thermal upward buoyancy
 			p.update();
 			p.draw(ctx);
 
