@@ -145,3 +145,5 @@ export class ParticleFlowVisualizer {
 		ctx.restore();
 	}
 }
+
+// Update the shape so there isn't only one main peak
