@@ -25,11 +25,9 @@ export class ParticleFlowVisualizer {
 		const centerX = width / 2;
 		const baselineY = height * 0.92;
 
-		// 1. Clear frame
 		ctx.save();
 		ctx.clearRect(0, 0, width, height);
 
-		// 2. Resolve Dynamic Theme Palette
 		let themePalette = [];
 		if (Array.isArray(colors.palette) && colors.palette.length > 0) {
 			themePalette = colors.palette;
@@ -39,13 +37,11 @@ export class ParticleFlowVisualizer {
 		}
 
 		const numHalfPoints = 32;
-
 		if (this.smoothedData.length !== numHalfPoints) {
 			this.smoothedData = new Float32Array(numHalfPoints);
 			this.spatialData = new Float32Array(numHalfPoints);
 		}
 
-		// 3. Process Audio Frequency Data
 		const hasData = data && data.length > 0;
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
@@ -63,7 +59,6 @@ export class ParticleFlowVisualizer {
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 
-			// Spatial smoothing across adjacent nodes
 			for (let i = 0; i < numHalfPoints; i++) {
 				const prev = this.smoothedData[Math.max(0, i - 1)];
 				const curr = this.smoothedData[i];
@@ -77,41 +72,30 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 4. Generate Left-Half Nodes (Bass in Center)
 		const leftPoints = [];
-
 		for (let i = 0; i < numHalfPoints; i++) {
 			const amp = Math.min(1.0, Math.max(0.02, this.spatialData[i]));
-
-			// X position going from centerX (index 0 / bass) out to 0 (index 31 / treble)
 			const x = (1 - (i / (numHalfPoints - 1))) * centerX;
-
 			leftPoints.push({ x, amp, index: i });
 		}
 
-		// 5. Spawn Particles continuously from the Baseline
 		if (hasData) {
 			for (let i = 0; i < leftPoints.length; i++) {
 				const pt = leftPoints[i];
-
 				const colorRatio = pt.index / (numHalfPoints - 1);
 				const colorIdx = Math.floor(colorRatio * themePalette.length);
 				const color = themePalette[colorIdx % themePalette.length];
 
-				// A. Continuous Ember Base Bed
 				if (Math.random() < 0.4 && this.particles.length < this.maxParticles - 1) {
 					const vx = (Math.random() - 0.5) * 0.5;
 					const vy = -1.0 - (Math.random() * 1.5);
 					const decay = 0.02 + Math.random() * 0.015;
-
-					// Left
 					const pLeft = new Particle(pt.x, baselineY, -Math.PI / 2, color);
 					pLeft.vx = vx;
 					pLeft.vy = vy;
 					pLeft.decay = decay;
 					this.particles.push(pLeft);
 
-					// Mirrored Right
 					if (pt.x < centerX - 2) {
 						const pRight = new Particle(width - pt.x, baselineY, -Math.PI / 2, color);
 						pRight.vx = -vx;
@@ -121,7 +105,6 @@ export class ParticleFlowVisualizer {
 					}
 				}
 
-				// B. Audio Plumes: Spawn AT baselineY, launch upward using amp
 				if (pt.amp > 0.05) {
 					const burstCount = Math.floor(pt.amp * 3);
 
@@ -131,21 +114,14 @@ export class ParticleFlowVisualizer {
 						const spawnX = pt.x + (Math.random() - 0.5) * 12;
 						const spawnY = baselineY + (Math.random() - 0.5) * 6;
 						const vx = (Math.random() - 0.5) * 0.8;
-
-						// Velocity proportional to amplitude creates seamless height streams
 						const vy = -(2.5 + (pt.amp * 5.5) + (Math.random() * 1.5));
-
-						// Longer lifespan (slower decay) so particles reach the top without leaving gaps
 						const decay = 0.01 + Math.random() * 0.012;
-
-						// Left Flame Stream
 						const pLeft = new Particle(spawnX, spawnY, -Math.PI / 2, color);
 						pLeft.vx = vx;
 						pLeft.vy = vy;
 						pLeft.decay = decay;
 						this.particles.push(pLeft);
 
-						// Mirrored Right Flame Stream
 						if (pt.x < centerX - 2) {
 							const pRight = new Particle(width - spawnX, spawnY, -Math.PI / 2, color);
 							pRight.vx = -vx;
@@ -158,17 +134,12 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 6. Update and Render Rising Particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
-
-			p.vy -= 0.025; // Buoyancy drag
+			p.vy -= 0.025;
 			p.update();
 			p.draw(ctx);
-
-			if (p.alpha <= 0 || p.x < -20 || p.x > width + 20 || p.y < -20 || p.y > height + 20) {
-				this.particles.splice(i, 1);
-			}
+			if (p.alpha <= 0 || p.x < -20 || p.x > width + 20 || p.y < -20 || p.y > height + 20) this.particles.splice(i, 1);
 		}
 
 		ctx.restore();
