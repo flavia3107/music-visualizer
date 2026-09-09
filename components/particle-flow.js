@@ -7,7 +7,7 @@ export class ParticleFlowVisualizer {
 		this.spatialData = new Float32Array(0);
 		this.maxParticles = 1200;
 
-		this.shapeMode = 'vortex';
+		this.shapeMode = 'wave';
 		this.phase = 0;
 	}
 
@@ -77,46 +77,41 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 4. Generate Left-Half Nodes (REVERSED: Bass/index 0 sits at centerX)
-		this.phase += 0.03;
+		// 4. Generate Left-Half Nodes (Bass in Center)
 		const leftPoints = [];
-		const maxFlameHeight = height * 0.5;
 
 		for (let i = 0; i < numHalfPoints; i++) {
 			const amp = Math.min(1.0, Math.max(0.02, this.spatialData[i]));
 
-			// Reversing the ratio puts index 0 (bass/peaks) at centerX and high frequencies at edge 0
+			// X position going from centerX (index 0 / bass) out to 0 (index 31 / treble)
 			const x = (1 - (i / (numHalfPoints - 1))) * centerX;
-			const flicker = (Math.sin(this.phase + i * 0.4) * 3) + (Math.cos(this.phase * 1.3 + i * 0.6) * 3);
-			const y = baselineY - (amp * maxFlameHeight) + flicker;
 
-			leftPoints.push({ x, y, amp, index: i });
+			leftPoints.push({ x, amp, index: i });
 		}
 
-		// 5. Spawn Left Particles and Direct-Mirror Them to the Right
+		// 5. Spawn Particles continuously from the Baseline
 		if (hasData) {
 			for (let i = 0; i < leftPoints.length; i++) {
 				const pt = leftPoints[i];
 
-				// Palette colors map outward from center (index 0) to outer edges
 				const colorRatio = pt.index / (numHalfPoints - 1);
 				const colorIdx = Math.floor(colorRatio * themePalette.length);
 				const color = themePalette[colorIdx % themePalette.length];
 
-				// A. Base Ember Bed
-				if (Math.random() < 0.5 && this.particles.length < this.maxParticles - 1) {
-					const vx = (Math.random() - 0.5) * 0.6;
-					const vy = -0.8 - (Math.random() * 1.5);
-					const decay = 0.025 + Math.random() * 0.02;
+				// A. Continuous Ember Base Bed
+				if (Math.random() < 0.4 && this.particles.length < this.maxParticles - 1) {
+					const vx = (Math.random() - 0.5) * 0.5;
+					const vy = -1.0 - (Math.random() * 1.5);
+					const decay = 0.02 + Math.random() * 0.015;
 
-					// Spawn Left Particle
+					// Left
 					const pLeft = new Particle(pt.x, baselineY, -Math.PI / 2, color);
 					pLeft.vx = vx;
 					pLeft.vy = vy;
 					pLeft.decay = decay;
 					this.particles.push(pLeft);
 
-					// Spawn Mirrored Right Particle
+					// Mirrored Right
 					if (pt.x < centerX - 2) {
 						const pRight = new Particle(width - pt.x, baselineY, -Math.PI / 2, color);
 						pRight.vx = -vx;
@@ -126,29 +121,33 @@ export class ParticleFlowVisualizer {
 					}
 				}
 
-				// B. Audio Peak Flares (Blasts tallest in center)
-				if (pt.amp > 0.06) {
-					const burstCount = Math.floor(pt.amp * 2);
+				// B. Audio Plumes: Spawn AT baselineY, launch upward using amp
+				if (pt.amp > 0.05) {
+					const burstCount = Math.floor(pt.amp * 3);
 
 					for (let s = 0; s < burstCount; s++) {
 						if (this.particles.length >= this.maxParticles - 1) break;
 
-						const offsetX = (Math.random() - 0.5) * 8;
-						const offsetY = (Math.random() - 0.5) * 6;
+						const spawnX = pt.x + (Math.random() - 0.5) * 12;
+						const spawnY = baselineY + (Math.random() - 0.5) * 6;
 						const vx = (Math.random() - 0.5) * 0.8;
-						const vy = -(1.8 + (pt.amp * 2.5) + (Math.random() * 1.2));
-						const decay = 0.02 + Math.random() * 0.02;
 
-						// Left Peak Particle
-						const pLeft = new Particle(pt.x + offsetX, pt.y + offsetY, -Math.PI / 2, color);
+						// Velocity proportional to amplitude creates seamless height streams
+						const vy = -(2.5 + (pt.amp * 5.5) + (Math.random() * 1.5));
+
+						// Longer lifespan (slower decay) so particles reach the top without leaving gaps
+						const decay = 0.01 + Math.random() * 0.012;
+
+						// Left Flame Stream
+						const pLeft = new Particle(spawnX, spawnY, -Math.PI / 2, color);
 						pLeft.vx = vx;
 						pLeft.vy = vy;
 						pLeft.decay = decay;
 						this.particles.push(pLeft);
 
-						// Mirrored Right Peak Particle
+						// Mirrored Right Flame Stream
 						if (pt.x < centerX - 2) {
-							const pRight = new Particle(width - (pt.x + offsetX), pt.y + offsetY, -Math.PI / 2, color);
+							const pRight = new Particle(width - spawnX, spawnY, -Math.PI / 2, color);
 							pRight.vx = -vx;
 							pRight.vy = vy;
 							pRight.decay = decay;
@@ -159,11 +158,11 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 6. Update and Render Particles
+		// 6. Update and Render Rising Particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
 
-			p.vy -= 0.03; // Thermal upward buoyancy
+			p.vy -= 0.025; // Buoyancy drag
 			p.update();
 			p.draw(ctx);
 
