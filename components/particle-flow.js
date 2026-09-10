@@ -1,11 +1,30 @@
 import { Particle } from './particle.js';
 
+function colorWithAlpha(colorStr, alpha) {
+	if (!colorStr) return `rgba(0, 210, 255, ${alpha})`;
+
+	if (colorStr.startsWith('#') && colorStr.length === 7) {
+		const hexAlpha = Math.round(alpha * 255).toString(16).padStart(2, '0');
+		return `${colorStr}${hexAlpha}`;
+	}
+
+	if (colorStr.startsWith('hsl')) {
+		const matches = colorStr.match(/\d+%/g) || [];
+		const hue = colorStr.match(/\d+/)?.[0] || 0;
+		if (matches.length >= 2) {
+			return `hsla(${hue}, ${matches[0]}, ${matches[1]}, ${alpha})`;
+		}
+	}
+
+	return colorStr;
+}
+
 export class ParticleFlowVisualizer {
 	constructor() {
 		this.particles = [];
 		this.smoothedData = new Float32Array(0);
 		this.spatialData = new Float32Array(0);
-		this.maxParticles = 1200;
+		this.maxParticles = 1400;
 
 		this.shapeMode = 'wave';
 		this.phase = 0;
@@ -42,6 +61,7 @@ export class ParticleFlowVisualizer {
 			this.spatialData = new Float32Array(numHalfPoints);
 		}
 
+		// 1. Audio Frequency Processing
 		const hasData = data && data.length > 0;
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
@@ -59,6 +79,7 @@ export class ParticleFlowVisualizer {
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 
+			// Spatial Gaussian blur across adjacent points for smooth curve bounds
 			for (let i = 0; i < numHalfPoints; i++) {
 				const prev = this.smoothedData[Math.max(0, i - 1)];
 				const curr = this.smoothedData[i];
@@ -72,78 +93,88 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		const leftPoints = [];
+		// 2. Compute Contour Map for Area Chart Bounds (Bass in Center)
+		const numTotalPoints = numHalfPoints * 2 - 1;
+		const fullPoints = new Array(numTotalPoints);
+		const step = width / (numTotalPoints - 1);
+		const centerIdx = numHalfPoints - 1;
+		const maxAreaHeight = height * 0.65;
+
 		for (let i = 0; i < numHalfPoints; i++) {
-			const amp = Math.min(1.0, Math.max(0.02, this.spatialData[i]));
-			const x = (1 - (i / (numHalfPoints - 1))) * centerX;
-			leftPoints.push({ x, amp, index: i });
+			const amp = Math.min(1.0, Math.max(0.01, this.spatialData[i]));
+			const topY = baselineY - (amp * maxAreaHeight);
+
+			// Right side (Center to Right edge)
+			const rightIdx = centerIdx + i;
+			fullPoints[rightIdx] = { x: rightIdx * step, topY, amp, index: i };
+
+			// Mirrored Left side (Center to Left edge)
+			const leftIdx = centerIdx - i;
+			fullPoints[leftIdx] = { x: leftIdx * step, topY, amp, index: i };
 		}
 
+		// 3. Draw Contour Top Line
+		const primaryColor = themePalette[0] || '#00d2ff';
+		ctx.beginPath();
+		ctx.moveTo(fullPoints[0].x, fullPoints[0].topY);
+
+		for (let i = 0; i < fullPoints.length - 1; i++) {
+			const xc = (fullPoints[i].x + fullPoints[i + 1].x) / 2;
+			const yc = (fullPoints[i].topY + fullPoints[i + 1].topY) / 2;
+			ctx.quadraticCurveTo(fullPoints[i].x, fullPoints[i].topY, xc, yc);
+		}
+		ctx.lineTo(fullPoints[fullPoints.length - 1].x, fullPoints[fullPoints.length - 1].topY);
+
+		ctx.lineWidth = 2.0;
+		ctx.strokeStyle = colorWithAlpha(primaryColor, 0.8);
+		ctx.shadowColor = primaryColor;
+		ctx.shadowBlur = 8;
+		ctx.stroke();
+		ctx.shadowBlur = 0;
+
+		// 4. Fill Inner Area Region with Particles
 		if (hasData) {
-			for (let i = 0; i < leftPoints.length; i++) {
-				const pt = leftPoints[i];
+			const particlesPerPoint = 3;
+
+			for (let i = 0; i < fullPoints.length; i++) {
+				const pt = fullPoints[i];
 				const colorRatio = pt.index / (numHalfPoints - 1);
 				const colorIdx = Math.floor(colorRatio * themePalette.length);
 				const color = themePalette[colorIdx % themePalette.length];
 
-				if (Math.random() < 0.4 && this.particles.length < this.maxParticles - 1) {
-					const vx = (Math.random() - 0.5) * 0.5;
-					const vy = -1.0 - (Math.random() * 1.5);
-					const decay = 0.02 + Math.random() * 0.015;
-					const pLeft = new Particle(pt.x, baselineY, -Math.PI / 2, color);
-					pLeft.vx = vx;
-					pLeft.vy = vy;
-					pLeft.decay = decay;
-					this.particles.push(pLeft);
+				const areaHeight = baselineY - pt.topY;
 
-					if (pt.x < centerX - 2) {
-						const pRight = new Particle(width - pt.x, baselineY, -Math.PI / 2, color);
-						pRight.vx = -vx;
-						pRight.vy = vy;
-						pRight.decay = decay;
-						this.particles.push(pRight);
-					}
-				}
+				if (areaHeight > 4) {
+					for (let k = 0; k < particlesPerPoint; k++) {
+						if (this.particles.length >= this.maxParticles) break;
 
-				if (pt.amp > 0.05) {
-					const burstCount = Math.floor(pt.amp * 3);
+						// Spawn randomly across the entire height profile (baselineY to topY)
+						const heightRatio = Math.random();
+						const spawnY = baselineY - (heightRatio * areaHeight);
+						const spawnX = pt.x + (Math.random() - 0.5) * step;
 
-					for (let s = 0; s < burstCount; s++) {
-						if (this.particles.length >= this.maxParticles - 1) break;
+						const p = new Particle(spawnX, spawnY, -Math.PI / 2, color);
+						p.vx = (Math.random() - 0.5) * 0.4;
+						p.vy = -(0.2 + (1 - heightRatio) * 0.8); // Higher particles float up slightly faster
+						p.decay = 0.025 + Math.random() * 0.02;
 
-						const spawnX = pt.x + (Math.random() - 0.5) * 12;
-						const spawnY = baselineY + (Math.random() - 0.5) * 6;
-						const vx = (Math.random() - 0.5) * 0.8;
-						const vy = -(2.5 + (pt.amp * 5.5) + (Math.random() * 1.5));
-						const decay = 0.01 + Math.random() * 0.012;
-						const pLeft = new Particle(spawnX, spawnY, -Math.PI / 2, color);
-						pLeft.vx = vx;
-						pLeft.vy = vy;
-						pLeft.decay = decay;
-						this.particles.push(pLeft);
-
-						if (pt.x < centerX - 2) {
-							const pRight = new Particle(width - spawnX, spawnY, -Math.PI / 2, color);
-							pRight.vx = -vx;
-							pRight.vy = vy;
-							pRight.decay = decay;
-							this.particles.push(pRight);
-						}
+						this.particles.push(p);
 					}
 				}
 			}
 		}
 
+		// 5. Update and Draw Internal Particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
-			p.vy -= 0.025;
 			p.update();
 			p.draw(ctx);
-			if (p.alpha <= 0 || p.x < -20 || p.x > width + 20 || p.y < -20 || p.y > height + 20) this.particles.splice(i, 1);
+
+			if (p.alpha <= 0 || p.x < -20 || p.x > width + 20 || p.y < -20 || p.y > height + 20) {
+				this.particles.splice(i, 1);
+			}
 		}
 
 		ctx.restore();
 	}
 }
-
-// Update the shape so there isn't only one main peak
