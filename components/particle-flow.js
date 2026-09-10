@@ -12,14 +12,13 @@ export class ParticleFlowVisualizer {
 
 	setShapeMode(mode) {
 		const validModes = ['circle', 'vortex', 'helix', 'wave'];
-		if (validModes.includes(mode)) this.shapeMode = mode
+		if (validModes.includes(mode)) this.shapeMode = mode;
 	}
 
 	draw(ctx, data = new Uint8Array(0), bounds = {}, colors = {}) {
 		if (!ctx || !bounds.width || !bounds.height) return;
 
 		const { width, height } = bounds;
-		const centerX = width / 2;
 		const baselineY = height * 0.92;
 
 		ctx.save();
@@ -73,7 +72,7 @@ export class ParticleFlowVisualizer {
 		const maxAreaHeight = height * 0.65;
 
 		for (let i = 0; i < numHalfPoints; i++) {
-			const amp = Math.min(1.0, Math.max(0.01, this.spatialData[i]));
+			const amp = Math.min(1.0, Math.max(0.015, this.spatialData[i]));
 			const topY = baselineY - (amp * maxAreaHeight);
 			const rightIdx = centerIdx + i;
 			fullPoints[rightIdx] = { x: rightIdx * step, topY, amp, index: i };
@@ -81,26 +80,25 @@ export class ParticleFlowVisualizer {
 			fullPoints[leftIdx] = { x: leftIdx * step, topY, amp, index: i };
 		}
 
-		if (hasData) {
-			for (let i = 0; i < fullPoints.length; i++) {
-				const pt = fullPoints[i];
-				const areaHeight = baselineY - pt.topY;
+		for (let i = 0; i < fullPoints.length; i++) {
+			const pt = fullPoints[i];
+			const areaHeight = baselineY - pt.topY;
+			const spawnChance = hasData ? 0.35 : 0.08;
 
-				if (areaHeight > 4 && Math.random() < 0.35) {
-					const colorRatio = pt.index / (numHalfPoints - 1);
-					const colorIdx = Math.floor(colorRatio * themePalette.length);
-					const color = themePalette[colorIdx % themePalette.length];
+			if (areaHeight > 2 && Math.random() < spawnChance) {
+				const colorRatio = pt.index / (numHalfPoints - 1);
+				const colorIdx = Math.floor(colorRatio * themePalette.length);
+				const color = themePalette[colorIdx % themePalette.length];
 
-					if (this.particles.length < this.maxParticles) {
-						const heightRatio = Math.random();
-						const spawnY = baselineY - (heightRatio * areaHeight);
-						const spawnX = pt.x + (Math.random() - 0.5) * step * 1.2;
-						const p = new Particle(spawnX, spawnY, -Math.PI / 2, color);
-						p.vx = (Math.random() - 0.5) * 0.3;
-						p.vy = -(0.1 + Math.random() * 0.4);
-						p.decay = 0.02 + Math.random() * 0.015;
-						this.particles.push(p);
-					}
+				if (this.particles.length < this.maxParticles) {
+					const heightRatio = Math.random();
+					const spawnY = baselineY - (heightRatio * areaHeight);
+					const spawnX = pt.x + (Math.random() - 0.5) * step * 1.2;
+					const p = new Particle(spawnX, spawnY, -Math.PI / 2, color);
+					p.vx = (Math.random() - 0.5) * 0.3;
+					p.vy = -(0.1 + Math.random() * 0.4);
+					p.decay = 0.02 + Math.random() * 0.015;
+					this.particles.push(p);
 				}
 			}
 		}
