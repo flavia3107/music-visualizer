@@ -1,30 +1,11 @@
 import { Particle } from './particle.js';
 
-function colorWithAlpha(colorStr, alpha) {
-	if (!colorStr) return `rgba(0, 210, 255, ${alpha})`;
-
-	if (colorStr.startsWith('#') && colorStr.length === 7) {
-		const hexAlpha = Math.round(alpha * 255).toString(16).padStart(2, '0');
-		return `${colorStr}${hexAlpha}`;
-	}
-
-	if (colorStr.startsWith('hsl')) {
-		const matches = colorStr.match(/\d+%/g) || [];
-		const hue = colorStr.match(/\d+/)?.[0] || 0;
-		if (matches.length >= 2) {
-			return `hsla(${hue}, ${matches[0]}, ${matches[1]}, ${alpha})`;
-		}
-	}
-
-	return colorStr;
-}
-
 export class ParticleFlowVisualizer {
 	constructor() {
 		this.particles = [];
 		this.smoothedData = new Float32Array(0);
 		this.spatialData = new Float32Array(0);
-		this.maxParticles = 1400;
+		this.maxParticles = 800; // Cap particle ceiling to keep density light
 
 		this.shapeMode = 'wave';
 		this.phase = 0;
@@ -61,7 +42,7 @@ export class ParticleFlowVisualizer {
 			this.spatialData = new Float32Array(numHalfPoints);
 		}
 
-		// 1. Audio Frequency Processing
+		// 1. Process Audio Frequency Data
 		const hasData = data && data.length > 0;
 		if (hasData) {
 			const activeBins = Math.floor(data.length * 0.75);
@@ -79,7 +60,7 @@ export class ParticleFlowVisualizer {
 				this.smoothedData[i] += (targetAmp - this.smoothedData[i]) * rate;
 			}
 
-			// Spatial Gaussian blur across adjacent points for smooth curve bounds
+			// Spatial smoothing across adjacent bins
 			for (let i = 0; i < numHalfPoints; i++) {
 				const prev = this.smoothedData[Math.max(0, i - 1)];
 				const curr = this.smoothedData[i];
@@ -93,7 +74,7 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 2. Compute Contour Map for Area Chart Bounds (Bass in Center)
+		// 2. Map Upper Bound Contour Envelope
 		const numTotalPoints = numHalfPoints * 2 - 1;
 		const fullPoints = new Array(numTotalPoints);
 		const step = width / (numTotalPoints - 1);
@@ -113,50 +94,28 @@ export class ParticleFlowVisualizer {
 			fullPoints[leftIdx] = { x: leftIdx * step, topY, amp, index: i };
 		}
 
-		// 3. Draw Contour Top Line
-		const primaryColor = themePalette[0] || '#00d2ff';
-		ctx.beginPath();
-		ctx.moveTo(fullPoints[0].x, fullPoints[0].topY);
-
-		for (let i = 0; i < fullPoints.length - 1; i++) {
-			const xc = (fullPoints[i].x + fullPoints[i + 1].x) / 2;
-			const yc = (fullPoints[i].topY + fullPoints[i + 1].topY) / 2;
-			ctx.quadraticCurveTo(fullPoints[i].x, fullPoints[i].topY, xc, yc);
-		}
-		ctx.lineTo(fullPoints[fullPoints.length - 1].x, fullPoints[fullPoints.length - 1].topY);
-
-		ctx.lineWidth = 2.0;
-		ctx.strokeStyle = colorWithAlpha(primaryColor, 0.8);
-		ctx.shadowColor = primaryColor;
-		ctx.shadowBlur = 8;
-		ctx.stroke();
-		ctx.shadowBlur = 0;
-
-		// 4. Fill Inner Area Region with Particles
+		// 3. Fill Underneath the Envelope with Low-Density Particles
 		if (hasData) {
-			const particlesPerPoint = 3;
-
 			for (let i = 0; i < fullPoints.length; i++) {
 				const pt = fullPoints[i];
-				const colorRatio = pt.index / (numHalfPoints - 1);
-				const colorIdx = Math.floor(colorRatio * themePalette.length);
-				const color = themePalette[colorIdx % themePalette.length];
-
 				const areaHeight = baselineY - pt.topY;
 
-				if (areaHeight > 4) {
-					for (let k = 0; k < particlesPerPoint; k++) {
-						if (this.particles.length >= this.maxParticles) break;
+				// Spawn condition: Keep density low by spawning only on select probability passes
+				if (areaHeight > 4 && Math.random() < 0.35) {
+					const colorRatio = pt.index / (numHalfPoints - 1);
+					const colorIdx = Math.floor(colorRatio * themePalette.length);
+					const color = themePalette[colorIdx % themePalette.length];
 
-						// Spawn randomly across the entire height profile (baselineY to topY)
+					if (this.particles.length < this.maxParticles) {
+						// Randomize spawn position across the height profile below the curve
 						const heightRatio = Math.random();
 						const spawnY = baselineY - (heightRatio * areaHeight);
-						const spawnX = pt.x + (Math.random() - 0.5) * step;
+						const spawnX = pt.x + (Math.random() - 0.5) * step * 1.2;
 
 						const p = new Particle(spawnX, spawnY, -Math.PI / 2, color);
-						p.vx = (Math.random() - 0.5) * 0.4;
-						p.vy = -(0.2 + (1 - heightRatio) * 0.8); // Higher particles float up slightly faster
-						p.decay = 0.025 + Math.random() * 0.02;
+						p.vx = (Math.random() - 0.5) * 0.3;
+						p.vy = -(0.1 + Math.random() * 0.4); // Slow, gentle upward drift
+						p.decay = 0.02 + Math.random() * 0.015; // Controlled fade-out rate
 
 						this.particles.push(p);
 					}
@@ -164,7 +123,7 @@ export class ParticleFlowVisualizer {
 			}
 		}
 
-		// 5. Update and Draw Internal Particles
+		// 4. Update and Render Particles
 		for (let i = this.particles.length - 1; i >= 0; i--) {
 			const p = this.particles[i];
 			p.update();
