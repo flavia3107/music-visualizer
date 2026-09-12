@@ -1,14 +1,3 @@
-.mode-item.active {
-	border-color: var(--accent-blue);
-	background: rgba(0, 243, 255, 0.1);
-}
-
-.modes-grid {
-	flex-wrap: wrap;
-	gap: 10px;
-	margin-bottom: 1.5rem;
-}
-
 .theme-container {
 	padding-bottom: 1rem;
 	border-bottom: 1px solid #ffffff14;

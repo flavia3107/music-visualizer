@@ -35,13 +35,11 @@ function renderVisualizationModes(modes) {
    if (!container) return;
 
    container.innerHTML = modes.map(mode => `
-     <div class="mode-item ${mode.active ? 'active' : ''}" data-mode="${mode.id}">
-       <div class="mode-icon-box">
-         <img src="${mode.icon}" alt="${mode.title}" />
-       </div>
-       <span class="mode-title">${mode.title}</span>
-     </div>
-   `).join('');
+   <div class="mode-item ${mode.active ? 'active' : ''}" data-mode="${mode.id}">
+     <div class="mode-icon-box" style="background-image: url('${mode.icon}');" aria-label="${mode.title}"></div>
+     <span class="mode-title">${mode.title}</span>
+   </div>
+ `).join('');
 }
 
 function initVisualizationEvents() {
