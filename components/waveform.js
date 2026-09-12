@@ -10,13 +10,14 @@ export class WaveformCurveVisualizer {
 		const { width, height, centerY = height / 2 } = bounds;
 		const primary = colors.primary || 'hsla(195, 100%, 50%, 1)';
 		const secondary = colors.secondary || 'hsla(320, 100%, 55%, 1)';
-		const accent = colors.accent || 'hsla(45, 100%, 50%, 1)';
 		const mutedPrimary = colors.mutedPrimary || 'hsla(195, 45%, 45%, 0.25)';
 		const mutedSecondary = colors.mutedSecondary || 'hsla(320, 45%, 50%, 0.25)';
 
 		ctx.save();
 		ctx.clearRect(0, 0, width, height);
-		ctx.globalCompositeOperation = 'lighter';
+
+		ctx.save();
+		ctx.globalCompositeOperation = 'source-over';
 		ctx.beginPath();
 		ctx.moveTo(0, centerY);
 		ctx.lineTo(width, centerY);
@@ -24,16 +25,18 @@ export class WaveformCurveVisualizer {
 		ctx.lineWidth = 0.75;
 		ctx.setLineDash([3, 3]);
 		ctx.stroke();
-		ctx.setLineDash([]);
+		ctx.restore();
 
 		const strokeGradient = ctx.createLinearGradient(0, 0, width, 0);
 		strokeGradient.addColorStop(0.0, primary);
-		strokeGradient.addColorStop(0.5, accent);
+		strokeGradient.addColorStop(0.4, primary);
+		strokeGradient.addColorStop(0.6, secondary);
 		strokeGradient.addColorStop(1.0, secondary);
 
 		const fillGradient = ctx.createLinearGradient(0, 0, width, 0);
 		fillGradient.addColorStop(0.0, mutedPrimary);
-		fillGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
+		fillGradient.addColorStop(0.4, mutedPrimary);
+		fillGradient.addColorStop(0.6, mutedSecondary);
 		fillGradient.addColorStop(1.0, mutedSecondary);
 
 		const hasData = data && data.length > 0;
@@ -94,6 +97,7 @@ export class WaveformCurveVisualizer {
 
 		if (isPlaying) {
 			ctx.save();
+			ctx.globalCompositeOperation = 'screen';
 			ctx.beginPath();
 			ctx.moveTo(wavePoints[0].x, centerY);
 			for (let i = 0; i < wavePoints.length - 1; i++) {
@@ -108,26 +112,33 @@ export class WaveformCurveVisualizer {
 			ctx.restore();
 		}
 
+		ctx.globalCompositeOperation = 'screen';
+
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
-		ctx.lineWidth = 3;
+		ctx.lineWidth = 5;
 		ctx.shadowColor = secondary;
-		ctx.shadowBlur = isPlaying ? 8 + this.beatEnergy * 25 : 0;
+		ctx.shadowBlur = isPlaying ? 20 + this.beatEnergy * 20 : 12;
 		ctx.stroke();
 		ctx.restore();
 
 		ctx.save();
 		buildWavePath();
 		ctx.strokeStyle = strokeGradient;
-		ctx.lineWidth = 1.5;
+		ctx.lineWidth = 3;
+		ctx.stroke();
+		ctx.restore();
+
+		ctx.save();
+		buildWavePath();
+		ctx.strokeStyle = strokeGradient;
+		ctx.lineWidth = 1.25;
 		ctx.shadowColor = primary;
-		ctx.shadowBlur = isPlaying ? 4 : 0;
+		ctx.shadowBlur = 4;
 		ctx.stroke();
 		ctx.restore();
 
 		ctx.restore();
 	}
 }
-// make the line shorter
-// make it more visible the highs and lows
