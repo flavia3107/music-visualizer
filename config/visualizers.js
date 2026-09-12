@@ -10,28 +10,8 @@ export const RING_GRADIENT_STOPS = {
 };
 
 export const VIZUALIZATION_MODES = [
-	{
-		id: 'radial-bars',
-		title: 'Radial Bars',
-		icon: 'path/to/radial-bars.svg', // or URL / inline SVG
-		active: true
-	},
-	{
-		id: 'waveform-curve',
-		title: 'Waveform Curve',
-		icon: 'path/to/waveform-curve.svg',
-		active: false
-	},
-	{
-		id: 'spectral-peak',
-		title: 'Spectral Peak',
-		icon: 'path/to/spectral-peak.svg',
-		active: false
-	},
-	{
-		id: 'particle-flow',
-		title: 'Particle Flow',
-		icon: 'path/to/particle-flow.svg',
-		active: false
-	}
+	{ id: 'Radial Bars', title: 'Radial Bars', icon: 'path/to/radial-bars.svg', active: true },
+	{ id: 'Waveform Curve', title: 'Waveform Curve', icon: 'path/to/waveform-curve.svg', active: false },
+	{ id: 'Spectral Peak', title: 'Spectral Peak', icon: 'path/to/spectral-peak.svg', active: false },
+	{ id: 'Particle Flow', title: 'Particle Flow', icon: 'path/to/particle-flow.svg', active: false }
 ];

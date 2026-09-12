@@ -30,30 +30,34 @@ const manager = new VisualizerManager('mainCanvas', getAudioData, { colors: THEM
 const themeManager = new ThemeManager(manager);
 const partyMode = new PartyMode({ buttonSelector: '.btn-party', targetSelector: '.ui-container', fullscreenClass: 'party-fullscreen' });
 
-const modeItems = document.querySelectorAll('.modes-grid .mode-item');
-modeItems.forEach(item => {
-   item.addEventListener('click', () => {
-      const modeName = item.textContent.trim();
-      modeItems.forEach(el => el.classList.remove('active'));
-      item.classList.add('active');
-
-      if (visualizers[modeName]) {
-         manager.setVisualizer(visualizers[modeName]);
-      }
-   });
-});
-
 function renderVisualizationModes(modes) {
    const container = document.querySelector('.modes-grid');
+   if (!container) return;
 
    container.innerHTML = modes.map(mode => `
-     <div class="mode-item ${mode.active ? 'active' : ''}" data-id="${mode.id}">
+     <div class="mode-item ${mode.active ? 'active' : ''}" data-mode="${mode.id}">
        <div class="mode-icon-box">
          <img src="${mode.icon}" alt="${mode.title}" />
        </div>
        <span class="mode-title">${mode.title}</span>
      </div>
    `).join('');
+}
+
+function initVisualizationEvents() {
+   const container = document.querySelector('.modes-grid');
+   if (!container) return;
+
+   container.addEventListener('click', (e) => {
+      const item = e.target.closest('.mode-item');
+      if (!item) return;
+
+      const modeKey = item.dataset.mode;
+      container.querySelectorAll('.mode-item').forEach(el => el.classList.remove('active'));
+      item.classList.add('active');
+
+      if (visualizers[modeKey]) manager.setVisualizer(visualizers[modeKey]);
+   });
 }
 
 function initPlayerControls(audio, controlsContainer, trackOptions) {
@@ -64,11 +68,13 @@ function initPlayerControls(audio, controlsContainer, trackOptions) {
    };
 }
 
+renderVisualizationModes(VIZUALIZATION_MODES);
+initVisualizationEvents();
+
 manager.setVisualizer(visualizers['Radial Bars']);
 manager.start();
 
 initPlayerControls(audioElement, '.player-controls', CONTROLLER_CONFIG);
-renderVisualizationModes(VIZUALIZATION_MODES);
 initButtons();
 
 /*
