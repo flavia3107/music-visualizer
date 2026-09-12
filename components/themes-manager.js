@@ -68,6 +68,7 @@ export class ThemeManager {
 
 		this.container.innerHTML = headingHTML + itemsHTML;
 	}
+
 	init() {
 		if (!this.container) return;
 
