@@ -6,6 +6,7 @@ import { AudioPlayerController } from './components/audio-player-controller.js';
 import { PartyMode } from './components/full-screen.js';
 import { SpectralPeakVisualizer } from './components/spectral-peak.js';
 import { ParticleFlowVisualizer } from './components/particle-flow.js'
+import { VIZUALIZATION_MODES } from './config/visualizers.js';
 
 import {
    initButtons,
@@ -42,6 +43,19 @@ modeItems.forEach(item => {
    });
 });
 
+function renderVisualizationModes(modes) {
+   const container = document.querySelector('.modes-grid');
+
+   container.innerHTML = modes.map(mode => `
+     <div class="mode-item ${mode.active ? 'active' : ''}" data-id="${mode.id}">
+       <div class="mode-icon-box">
+         <img src="${mode.icon}" alt="${mode.title}" />
+       </div>
+       <span class="mode-title">${mode.title}</span>
+     </div>
+   `).join('');
+}
+
 function initPlayerControls(audio, controlsContainer, trackOptions) {
    const controller = new AudioPlayerController(audio, controlsContainer, trackOptions);
    return {
@@ -54,6 +68,7 @@ manager.setVisualizer(visualizers['Radial Bars']);
 manager.start();
 
 initPlayerControls(audioElement, '.player-controls', CONTROLLER_CONFIG);
+renderVisualizationModes(VIZUALIZATION_MODES);
 initButtons();
 
 /*
