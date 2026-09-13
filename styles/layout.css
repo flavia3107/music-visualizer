@@ -91,10 +91,12 @@ footer {
 
 /* Footer playback controller - Locked flush with bottom of side panels */
 footer.playback-bar {
-	margin-top: auto; /* Pushes controller flush to the bottom edge of .center-spacer */
+	margin-top: auto;
 	flex-shrink: 0;
 	width: 100%;
 	box-sizing: border-box;
+	height: fit-content;
+	padding-bottom: 0;
 }
 
 /* Controls inside footer */
