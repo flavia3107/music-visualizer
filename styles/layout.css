@@ -14,7 +14,6 @@ header {
 	flex-direction: column;
 	padding: 20px;
 	box-sizing: border-box;
-	/* Removed rigid max-height so stacked layout can flow naturally on smaller screens */
 	min-height: 0;
 }
 
@@ -22,21 +21,22 @@ header {
 	pointer-events: auto;
 }
 
-/* --- Main Layout Grid / Flex --- */
+/* --- Main Layout Container --- */
 
 .main-content {
-	display: grid;
-	/* Left sidebar | Center visualizer | Right sidebar */
-	grid-template-columns: 320px 1fr 320px;
-	gap: 20px;
+	display: flex;
+	flex-direction: row;
 	flex: 1;
 	min-height: 0;
-	align-items: stretch; /* Forces all 3 columns to match the height of the tallest panel */
+	gap: 20px;
+	align-items: stretch; /* Stretches left, center, and right columns to equal height */
 }
 
 /* Side Panels */
 .left-panel,
 .right-panel {
+	width: 320px;
+	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
@@ -58,7 +58,7 @@ footer {
 .center-spacer {
 	display: flex;
 	flex-direction: column;
-	height: 100%; /* Spans full height of the grid row */
+	flex: 1;
 	min-height: 0;
 	min-width: 0;
 	gap: 1rem;
@@ -68,7 +68,7 @@ footer {
 
 #mainCanvas,
 #waveformCanvas {
-	width: 100%; /* Spans fully within center container */
+	width: 100%;
 	max-width: 100%;
 	z-index: 1;
 	display: block;
@@ -76,20 +76,21 @@ footer {
 
 #mainCanvas {
 	width: 100%;
-	flex: 1 1 auto; /* Allows canvas to take up all middle space */
-	min-height: 0;
+	flex: 1 1 auto; /* Fill available height above controller */
+	min-height: 200px;
 	object-fit: contain;
 	display: block;
 }
 
+/* Footer playback controller - Locked flush with bottom of side panels */
 footer.playback-bar {
-	margin-top: auto; /* Pushes controller to bottom edge of .center-spacer */
+	margin-top: auto; /* Pushes controller flush to the bottom edge of .center-spacer */
 	flex-shrink: 0;
 	width: 100%;
 	box-sizing: border-box;
 }
 
-/* Controls responsiveness inside footer */
+/* Controls inside footer */
 .playback-controls-bar {
 	display: flex;
 	flex-wrap: wrap;
@@ -111,33 +112,38 @@ footer.playback-bar {
    Responsive Breakpoints
    ========================================================================== */
 
-/* 1. Large Screens & Desktop (Default Layout maintained) */
+/* 1. Large Desktop (Keep standard viewport-fit height) */
 @media (min-width: 1200px) {
 	.ui-container {
 		max-height: calc(100vh - 2rem);
 	}
 }
 
-/* 2. Tablets & Small Laptops (Stack Side Panels or Wrap Content) */
+/* 2. Tablets & Small Laptops (Stack Side Panels under Player) */
 @media (max-width: 1199px) {
-	.main-content {
-		flex-direction: column; /* Stack panels vertically as full sections */
+	.ui-container {
+		max-height: none;
 		overflow-y: auto;
+	}
+
+	.main-content {
+		flex-direction: column; /* Fully valid now that main-content uses flex */
 	}
 
 	.left-panel,
 	.right-panel {
-		width: 100%; /* Panels expand full width of viewport */
+		width: 100%;
 		margin: 0;
 	}
 
 	.center-spacer {
 		width: 100%;
-		order: -1; /* Keep Canvas & Player on top when stacked */
+		order: -1; /* Moves visualizer and player above controls on tablet/mobile */
 	}
 
 	#mainCanvas {
-		height: 350px; /* Provide explicit height when height restriction is removed */
+		height: 320px; /* Fixed height for stacked mode */
+		flex: none;
 	}
 }
 
