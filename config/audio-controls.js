@@ -19,7 +19,6 @@ export const PLAYER_CONTROLS_CONFIG = [
 		id: "play-pause",
 		action: "play-pause",
 		label: "Play",
-		// Allows toggling visual state dynamically (e.g. play_arrow <-> pause)
 		icons: {
 			playing: "pause",
 			paused: "play_arrow"
