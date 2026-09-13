@@ -58,9 +58,9 @@ footer {
 .center-spacer {
 	display: flex;
 	flex-direction: column;
+	justify-content: space-between; /* Keeps canvas top/middle and footer pinned to bottom */
 	flex: 1;
 	min-height: 0;
-	/* Replaced fixed min-width with fluid min-width */
 	min-width: 0;
 	gap: 1rem;
 	position: relative;
@@ -75,14 +75,16 @@ footer {
 }
 
 #mainCanvas {
-	margin: auto;
-	flex: 1 1 auto;
-	min-height: 250px;
+	width: 100%;
+	flex: 1 1 0; /* Allows flex box to shrink canvas dynamic height */
+	min-height: 0; /* Prevents canvas from overflowing vertical container */
 	max-height: 100%;
 	object-fit: contain;
+	margin: 0 auto;
 }
 
 footer.playback-bar {
+	margin-top: auto; /* Fallback guarantee to anchor at the bottom */
 	flex-shrink: 0;
 	width: 100%;
 	box-sizing: border-box;
