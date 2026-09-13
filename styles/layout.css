@@ -1,52 +1,35 @@
-/* ==========================================================================
-   Global & Reset Adjustments
-   ========================================================================== */
-
-* {
-	box-sizing: border-box;
-	margin: 0;
-	padding: 0;
-}
-
-body.flex-column {
-	display: flex;
-	flex-direction: column;
-	min-height: 100vh;
-	height: 100vh;
-	overflow: hidden; /* Prevents whole-page scrolling on desktop */
-}
+/* --- Global / Base Layout Adjustments --- */
 
 header {
 	margin: 1rem 1rem 0 1rem;
 	flex-shrink: 0;
 }
 
-/* Main UI Shell */
 .ui-container {
 	position: relative;
 	z-index: 2;
 	width: 100%;
 	flex: 1;
-	min-height: 0;
 	display: flex;
 	flex-direction: column;
 	padding: 20px;
+	box-sizing: border-box;
+	min-height: 0;
 }
 
 .ui-container * {
 	pointer-events: auto;
 }
 
-/* ==========================================================================
-   Main 3-Column Layout (Desktop Default)
-   ========================================================================== */
+/* --- Main Layout Container --- */
 
 .main-content {
 	display: flex;
 	flex-direction: row;
 	flex: 1;
-	min-height: 0; /* Critical for inner flex scrolling */
+	min-height: 0;
 	gap: 20px;
+	align-items: stretch; /* Stretches left, center, and right columns to equal height */
 }
 
 /* Side Panels */
@@ -57,13 +40,10 @@ header {
 	display: flex;
 	flex-direction: column;
 	gap: 20px;
-	overflow-y: auto; /* Side panels scroll internally if too tall */
-	max-height: 100%;
 }
 
-/* Reusable Panel & Footer Glassmorphism Styling */
 .panel,
-footer.playback-bar {
+footer {
 	background: #ffffff08;
 	backdrop-filter: blur(20px) brightness(1.5);
 	-webkit-backdrop-filter: blur(20px);
@@ -71,9 +51,10 @@ footer.playback-bar {
 	border-radius: 12px;
 	padding: 20px;
 	box-shadow: inset 0 0px 15px 0px #ffffff26;
+	box-sizing: border-box;
 }
 
-/* Middle Column - Holds Canvas and Footer */
+/* Central Section */
 .center-spacer {
 	display: flex;
 	flex-direction: column;
@@ -82,9 +63,9 @@ footer.playback-bar {
 	min-width: 0;
 	gap: 1rem;
 	position: relative;
+	box-sizing: border-box;
 }
 
-/* Canvas Container & Scaling */
 #mainCanvas,
 #waveformCanvas {
 	width: 100%;
@@ -94,20 +75,22 @@ footer.playback-bar {
 }
 
 #mainCanvas {
-	flex: 1 1 0; /* Take available remaining height */
-	min-height: 0; /* Prevents canvas from overflowing vertical parent */
+	width: 100%;
+	flex: 1 1 auto; /* Fill available height above controller */
+	min-height: 200px;
 	object-fit: contain;
-	margin: auto 0;
+	display: block;
 }
 
-/* Controller Bar - Pinned strictly to bottom of center column */
+/* Footer playback controller - Locked flush with bottom of side panels */
 footer.playback-bar {
+	margin-top: auto; /* Pushes controller flush to the bottom edge of .center-spacer */
 	flex-shrink: 0;
 	width: 100%;
-	margin-top: auto; /* Anchors bar flush at the bottom */
+	box-sizing: border-box;
 }
 
-/* Footer Control Elements */
+/* Controls inside footer */
 .playback-controls-bar {
 	display: flex;
 	flex-wrap: wrap;
@@ -129,41 +112,42 @@ footer.playback-bar {
    Responsive Breakpoints
    ========================================================================== */
 
-/* Tablet & Mobile Screens (Stack Layout) */
-@media (max-width: 1199px) {
-	body.flex-column {
-		height: auto;
-		overflow: auto; /* Enable regular document scrolling */
-	}
-
+/* 1. Large Desktop (Keep standard viewport-fit height) */
+@media (min-width: 1200px) {
 	.ui-container {
-		min-height: auto;
+		max-height: calc(100vh - 2rem);
+	}
+}
+
+/* 2. Tablets & Small Laptops (Stack Side Panels under Player) */
+@media (max-width: 1199px) {
+	.ui-container {
+		max-height: none;
+		overflow-y: auto;
 	}
 
 	.main-content {
-		flex-direction: column;
-		overflow: visible;
+		flex-direction: column; /* Fully valid now that main-content uses flex */
 	}
 
 	.left-panel,
 	.right-panel {
 		width: 100%;
-		max-height: none;
-		overflow: visible;
+		margin: 0;
 	}
 
 	.center-spacer {
 		width: 100%;
-		order: -1; /* Puts visualizer and controls at top on mobile/tablet */
+		order: -1; /* Moves visualizer and player above controls on tablet/mobile */
 	}
 
 	#mainCanvas {
-		height: 320px;
+		height: 320px; /* Fixed height for stacked mode */
 		flex: none;
 	}
 }
 
-/* Small Mobile Screens */
+/* 3. Mobile Devices */
 @media (max-width: 600px) {
 	.ui-container {
 		padding: 10px;
