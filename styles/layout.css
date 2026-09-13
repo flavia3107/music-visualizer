@@ -1,3 +1,5 @@
+/* --- Global / Base Layout Adjustments --- */
+
 header {
 	margin: 1rem 1rem 0 1rem;
 	flex-shrink: 0;
@@ -8,36 +10,36 @@ header {
 	z-index: 2;
 	width: 100%;
 	flex: 1;
-	min-height: 0;
 	display: flex;
 	flex-direction: column;
 	padding: 20px;
 	box-sizing: border-box;
-	max-height: calc(100vh - 2rem);
+	/* Removed rigid max-height so stacked layout can flow naturally on smaller screens */
+	min-height: 0;
 }
 
 .ui-container * {
 	pointer-events: auto;
 }
 
+/* --- Main Layout Grid / Flex --- */
+
 .main-content {
 	display: flex;
+	flex-direction: row;
 	flex: 1;
 	min-height: 0;
+	gap: 20px; /* Modern spacing between panels */
 }
 
-.left-panel {
-	width: 320px;
-	margin-right: 20px;
-	flex-shrink: 0;
-}
-
+/* Side Panels */
+.left-panel,
 .right-panel {
 	width: 320px;
-	margin-left: 20px;
+	flex-shrink: 0;
 	display: flex;
 	flex-direction: column;
-	flex-shrink: 0;
+	gap: 20px;
 }
 
 .panel,
@@ -45,25 +47,29 @@ footer {
 	background: #ffffff08;
 	backdrop-filter: blur(20px) brightness(1.5);
 	-webkit-backdrop-filter: blur(20px);
-	border: 1px solid var(--border-color);
+	border: 1px solid var(--border-color, rgba(255, 255, 255, 0.2));
 	border-radius: 12px;
 	padding: 20px;
 	box-shadow: inset 0 0px 15px 0px #ffffff26;
+	box-sizing: border-box;
 }
 
+/* Central Section */
 .center-spacer {
 	display: flex;
 	flex-direction: column;
 	flex: 1;
 	min-height: 0;
-	min-width: 50rem;
+	/* Replaced fixed min-width with fluid min-width */
+	min-width: 0;
 	gap: 1rem;
 	position: relative;
 }
 
 #mainCanvas,
 #waveformCanvas {
-	width: 90%;
+	width: 100%; /* Spans fully within center container */
+	max-width: 100%;
 	z-index: 1;
 	display: block;
 }
@@ -71,11 +77,88 @@ footer {
 #mainCanvas {
 	margin: auto;
 	flex: 1 1 auto;
-	min-height: 15rem;
+	min-height: 250px;
 	max-height: 100%;
 	object-fit: contain;
 }
 
 footer.playback-bar {
 	flex-shrink: 0;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* Controls responsiveness inside footer */
+.playback-controls-bar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 1rem;
+	justify-content: space-between;
+	align-items: center;
+}
+
+.progress {
+	width: 100%;
+	gap: 10px;
+}
+
+.scrubber {
+	flex: 1;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints
+   ========================================================================== */
+
+/* 1. Large Screens & Desktop (Default Layout maintained) */
+@media (min-width: 1200px) {
+	.ui-container {
+		max-height: calc(100vh - 2rem);
+	}
+}
+
+/* 2. Tablets & Small Laptops (Stack Side Panels or Wrap Content) */
+@media (max-width: 1199px) {
+	.main-content {
+		flex-direction: column; /* Stack panels vertically as full sections */
+		overflow-y: auto;
+	}
+
+	.left-panel,
+	.right-panel {
+		width: 100%; /* Panels expand full width of viewport */
+		margin: 0;
+	}
+
+	.center-spacer {
+		width: 100%;
+		order: -1; /* Keep Canvas & Player on top when stacked */
+	}
+
+	#mainCanvas {
+		height: 350px; /* Provide explicit height when height restriction is removed */
+	}
+}
+
+/* 3. Mobile Devices */
+@media (max-width: 600px) {
+	.ui-container {
+		padding: 10px;
+	}
+
+	.playback-controls-bar {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.volume-control {
+		width: 100%;
+		justify-content: space-between;
+	}
+
+	.volume-part {
+		display: flex;
+		align-items: center;
+		flex: 1;
+	}
 }
