@@ -40,11 +40,14 @@ export class VisualizerManager {
 
 	adjustCanvasSize() {
 		if (!this.canvas) return;
-		const { width, height } = this.canvas.getBoundingClientRect();
+
+		const width = this.canvas.clientWidth;
+		const height = this.canvas.clientHeight;
 		const dpr = window.devicePixelRatio || 1;
 
-		Object.assign(this.canvas.style, { width: `${width}px`, height: `${height}px` });
-		Object.assign(this.canvas, { width: width * dpr, height: height * dpr });
+		this.canvas.width = width * dpr;
+		this.canvas.height = height * dpr;
+		this.ctx.setTransform(1, 0, 0, 1, 0, 0);
 		this.ctx.scale(dpr, dpr);
 
 		this.bounds = { width, height, centerX: width / 2, centerY: height / 2 };
