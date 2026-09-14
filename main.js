@@ -78,7 +78,7 @@ initButtons();
 /*
    Technical Features to Add:
    - CORS & Audio CORS Handling: Set crossOrigin = "anonymous" for external audio URLs
-   - Responsive Canvas Engine: Window resize listener & devicePixelRatio handling for crisp graphics
+   - Remove double scrollbar
    - Performance Optimization: requestAnimationFrame loop cleanup on pause/stop to save CPU/GPU resources
    - Drag & Drop Interface: Allow dropping audio files directly onto the visualizer canvas
    - Add configuration to main portfolio app
