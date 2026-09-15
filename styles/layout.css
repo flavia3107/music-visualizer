@@ -139,6 +139,7 @@ footer.playback-bar {
 
 	.main-content {
 		flex-direction: column;
+		gap: 0.5rem;
 	}
 
 	.left-panel,
@@ -147,6 +148,7 @@ footer.playback-bar {
 		margin: 0;
 		max-height: none;
 		overflow-y: visible;
+		gap: 0.5rem;
 	}
 
 	.center-spacer {
@@ -157,6 +159,16 @@ footer.playback-bar {
 	#mainCanvas {
 		height: 320px;
 		flex: none;
+	}
+
+	footer.playback-bar {
+		margin-bottom: 0.5rem;
+		border-radius: 0.75rem;
+		padding-bottom: 0.5rem;
+	}
+
+	.playlist.panel {
+		margin: 0.5rem 0;
 	}
 }
 
