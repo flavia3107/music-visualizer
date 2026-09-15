@@ -1,4 +1,3 @@
-/* Range Inputs */
 input[type="range"] {
 	accent-color: #e1e1e1;
 }
@@ -8,7 +7,6 @@ input[type="range"]::-moz-range-track {
 	border: none;
 }
 
-/* Layout & Containers */
 .playback-bar {
 	flex-shrink: 0;
 	height: 4rem;
@@ -28,7 +26,6 @@ input[type="range"]::-moz-range-track {
 	margin-bottom: 1rem;
 }
 
-/* Controls Placement */
 .player-controls {
 	grid-column: 2;
 	justify-self: center;
@@ -45,7 +42,6 @@ input[type="range"]::-moz-range-track {
 	margin-right: 1rem;
 }
 
-/* Progress & Volume Scrubbers */
 .progress {
 	width: 100%;
 	padding-top: 1rem;
@@ -61,7 +57,6 @@ input[type="range"]::-moz-range-track {
 	margin-inline: 0.5rem;
 }
 
-/* Toggle States */
 .shuffle,
 .repeat {
 	color: #9a9a9a;
