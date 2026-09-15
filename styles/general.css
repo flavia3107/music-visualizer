@@ -86,3 +86,22 @@ a:focus-visible {
 .scrubber {
 	cursor: grab;
 }
+
+::-webkit-scrollbar {
+	height: 9px;
+	width: 9px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #485b75;
+	width: 9px;
+}
+
+::-webkit-scrollbar-track {
+	background: linear-gradient(135deg, #031d35 0%, #031d35 50%, #1b212a 100%);
+	width: 9px;
+}
+
+::-webkit-scrollbar-corner {
+	background: linear-gradient(135deg, #031d35 0%, #031d35 50%, #1b212a 100%);
+}

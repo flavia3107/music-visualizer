@@ -59,7 +59,7 @@ footer {
 	box-sizing: border-box;
 }
 
-.right-panel .panel.fit-content {
+.panel.fit-content {
 	height: auto;
 	min-height: 0;
 }
