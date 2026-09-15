@@ -100,14 +100,14 @@ function updatePlaylistUI() {
 		const isActive = track.id === currentTrackId;
 		const isPlaying = isActive && !audioElement.paused && !audioElement.ended;
 		const trackDiv = document.createElement('div');
-		trackDiv.className = `track flex-row space-between element${isActive ? ' active' : ''}`;
 		trackDiv.dataset.id = track.id;
-		trackDiv.innerHTML = `<span>${track.name}</span><span>${isPlaying ? '▶' : 'II'}</span>`;
+		trackDiv.innerHTML = `<span>${track.name}</span>
+			${isPlaying ? '<span class="material-symbols-outlined">music_note</span>' : ''} `;
+		trackDiv.className = `track flex-row space-between element${isActive ? ' active' : ''}`;
 		trackDiv.addEventListener('click', () => playTrack(track.id));
 		playlistContainer.appendChild(trackDiv);
 	});
 }
-
 function _checkAndStartMarquee() {
 	const container = document.querySelector('.song-title');
 	if (!container) return;

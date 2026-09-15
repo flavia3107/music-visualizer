@@ -80,6 +80,5 @@ initButtons();
    - CORS & Audio CORS Handling: Set crossOrigin = "anonymous" for external audio URLs
    - Performance Optimization: requestAnimationFrame loop cleanup on pause/stop to save CPU/GPU resources
    - Drag & Drop Interface: Allow dropping audio files directly onto the visualizer canvas
-   - Add configuration to main portfolio app
-   - Deploy MVP
+   - Fix: Last uploaded song gets lost after selecting another song from the list
  */
